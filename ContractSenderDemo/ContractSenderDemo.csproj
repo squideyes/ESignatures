@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>ContractSenderDemo</AssemblyName>
+    <RootNamespace>ContractSenderDemo</RootNamespace>
+    <UserSecretsId>28aa5ec6-fe75-4f6b-b82c-8dc8c180a28e</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.5.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="7.0.0" />
+    <PackageReference Include="OneOf" Version="3.0.243" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ESignatures\ESignatures.csproj" />
+  </ItemGroup>
+
+</Project>
