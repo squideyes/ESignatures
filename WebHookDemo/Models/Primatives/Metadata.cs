@@ -1,11 +1,11 @@
-﻿using System.Collections;
+﻿using DemoCommon;
 
 namespace WebHookDemo;
 
 public class Metadata
 {
-    public required string ClientId { get; init; }
-    public required string ContractKind { get; init; }
+    public required ClientId ClientId { get; init; }
+    public required ContractKind ContractKind { get; init; }
 
     public static Metadata Parse(string value)
     {
@@ -19,8 +19,8 @@ public class Metadata
 
         return new Metadata()
         {
-            ClientId = dict["ClientId"],
-            ContractKind = dict["ContractKind"]
+            ClientId = ClientId.From(dict["ClientId"]),
+            ContractKind = Enum.Parse<ContractKind>(dict["ContractKind"], true)
         };
     }
 }

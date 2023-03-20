@@ -53,6 +53,5 @@ public class ContractSigned : IWebHookData<ContractSigned>
         };
     }
 
-    public string GetBlobName(string folder) =>
-        $"Signed/{nameof(ContractSigned)}/{ContractId:N}.json";
+    public string GetBlobName() => $"Signed/{ContractId:N}.json";
 }

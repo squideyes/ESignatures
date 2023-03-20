@@ -1,8 +1,8 @@
 ﻿using System.Globalization;
 
-namespace SquidEyes.ESignatures;
+namespace DemoCommon;
 
-public static class PublicExtenders
+public static class MiscExtenders
 {
     public static string ToDayName(this DateTime date)
     {

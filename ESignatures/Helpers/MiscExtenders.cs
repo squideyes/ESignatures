@@ -3,15 +3,21 @@ using System.Text.RegularExpressions;
 
 namespace SquidEyes.ESignatures;
 
-internal static partial class InternalExtenders
+internal static partial class MiscExtenders
 {
-    private static readonly Regex metadataKeyValidator = GetMetadataKeyValidator();
 
+    private static readonly Regex tokenValidator = GetTokenValidator();
     private static readonly Regex apiKeyValidator = GetApiKeyValidator();
 
-    public static bool IsMetadataKey(this string value) =>
-        !string.IsNullOrWhiteSpace(value) && metadataKeyValidator.IsMatch(value);
+    public static bool IsToken(this string value) =>
+        !string.IsNullOrWhiteSpace(value) && tokenValidator.IsMatch(value);
 
+    public static bool IsNonEmptyAndTrimmed(this string value)
+    {
+        return !string.IsNullOrEmpty(value)
+            && !char.IsWhiteSpace(value[0])
+            && !char.IsWhiteSpace(value[^1]);
+    }
 
     private static readonly PhoneNumbers.PhoneNumberUtil pnu =
         PhoneNumbers.PhoneNumberUtil.GetInstance();
@@ -59,7 +65,7 @@ internal static partial class InternalExtenders
     }
 
     [GeneratedRegex("^[A-Z][A-Za-z0-9]{0,23}$")]
-    private static partial Regex GetMetadataKeyValidator();
+    private static partial Regex GetTokenValidator();
 
     [GeneratedRegex("^(?!-)(?!.*--)[a-z0-9-]{2,32}(?<!-)$")]
     private static partial Regex GetApiKeyValidator();

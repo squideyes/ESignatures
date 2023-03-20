@@ -10,7 +10,7 @@ internal static class MiscExtenders
 
     public static string TryGetHeaderValue(this HttpRequestData request, string name)
     {
-        return request.Headers.TryGetValues(name, out var values) 
+        return request.Headers.TryGetValues(name, out var values)
             ? values.FirstOrDefault()! : null!;
     }
 

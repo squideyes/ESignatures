@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ContractSenderDemo", "Contr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebHookDemo", "WebHookDemo\WebHookDemo.csproj", "{42CF4E1E-14CB-4FCB-9B85-B316CE59F710}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoCommon", "DemoCommon\DemoCommon.csproj", "{811CD4D5-FD68-45CF-A324-E3838327F8FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{42CF4E1E-14CB-4FCB-9B85-B316CE59F710}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{42CF4E1E-14CB-4FCB-9B85-B316CE59F710}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42CF4E1E-14CB-4FCB-9B85-B316CE59F710}.Release|Any CPU.Build.0 = Release|Any CPU
+		{811CD4D5-FD68-45CF-A324-E3838327F8FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{811CD4D5-FD68-45CF-A324-E3838327F8FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{811CD4D5-FD68-45CF-A324-E3838327F8FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{811CD4D5-FD68-45CF-A324-E3838327F8FA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -43,6 +49,7 @@ Global
 		{E35AE31A-FDCC-4AA9-B70E-BC881829222A} = {999B310E-831E-4565-A5A1-919E8EC780A4}
 		{C9C763EB-3A8C-4A67-9BCA-450F665DB977} = {999B310E-831E-4565-A5A1-919E8EC780A4}
 		{42CF4E1E-14CB-4FCB-9B85-B316CE59F710} = {999B310E-831E-4565-A5A1-919E8EC780A4}
+		{811CD4D5-FD68-45CF-A324-E3838327F8FA} = {999B310E-831E-4565-A5A1-919E8EC780A4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A7C085D3-62D0-4FCC-9680-3FAF08D87318}

@@ -8,7 +8,7 @@ public class Metadata
 
     public void Add(string key, object value)
     {
-        if (!key.IsMetadataKey())
+        if (!key.IsToken())
             throw new ArgumentOutOfRangeException(nameof(key));
 
         if (value == null)

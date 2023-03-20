@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DemoCommon\DemoCommon.csproj" />
     <ProjectReference Include="..\ESignatures\ESignatures.csproj" />
   </ItemGroup>
 

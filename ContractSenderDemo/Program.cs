@@ -1,4 +1,4 @@
-﻿using ContractSenderDemo;
+﻿using DemoCommon;
 using Microsoft.Extensions.Configuration;
 using SquidEyes.ESignatures;
 
@@ -20,11 +20,11 @@ var cts = new CancellationTokenSource();
 
 try
 {
-    var vendor = GetSigner(SignerKind.Vendor,
-        vendorEmail, vendorMobile, 1);
+    var vendor = GetSigner(
+        SignerKind.Vendor, vendorEmail, vendorMobile, 1);
 
-    var partner = GetSigner(SignerKind.Partner,
-        partnerEmail, partnerMobile, 0);
+    var partner = GetSigner(
+        SignerKind.Partner, partnerEmail, partnerMobile, 0);
 
     var request = new ContractSender(authToken, templateId)
         .AddPlaceholder("day", date.ToDayName())
@@ -33,13 +33,13 @@ try
         .AddPlaceholder("partner-company", partner.Company!)
         .AddPlaceholder("partner-knownas", partner.KnownAs!)
         .AddPlaceholder("partner-region", partner.Region!)
-        .AddPlaceholder("partner-address", partner.GetAddress())
+        .AddPlaceholder("partner-address", partner.GetOneLineAddress())
         .AddPlaceholder("vendor-company", vendor.Company!)
         .AddPlaceholder("vendor-knownas", vendor.KnownAs!)
         .AddPlaceholder("vendor-region", vendor.Region!)
-        .AddPlaceholder("vendor-address", vendor.GetAddress())
-        .WithMetadata("ClientId", "ABC12345")
-        .WithMetadata("ContractKind", "Partnership")
+        .AddPlaceholder("vendor-address", vendor.GetOneLineAddress())
+        .WithMetadata("client-id", "ABC12345")
+        .WithMetadata("contract-kind", ContractKind.Partnership)
         .WithLocale(Locale.EN)
         .AddSigners(partner, vendor)
         .WithWebHook(new Uri(baseUri, "/api/WebHook"))
@@ -53,11 +53,11 @@ catch(Exception error)
     Console.WriteLine("ERROR: " + error.Message);
 }
 
-Signer GetSigner(SignerKind kind, 
-    string email, string mobile, int ordinal)
+Signer GetSigner(SignerKind kind, string email, string mobile, int ordinal)
 {
     return new Signer()
     {
+        Kind = kind.ToString(),
         Ordinal = ordinal,
         Name = $"{kind} Mc{kind}",
         Email = email,

@@ -39,31 +39,35 @@ public class WebHooks
         [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData request)
     {
         if (!request.Headers.TryGetValues("Authorization", out var authHeader))
-            return GetResponse(request, Forbidden, "No Authorization Header!");
+            return await GetResponseAsync(request, Forbidden, "No Authorization Header!");
+
+        // handle bad authHeader
 
         var json = await request.ReadAsStringAsync();
 
         var node = JsonNode.Parse(json!);
 
-        var data = node.GetString("status") switch
+        var response = node.GetString("status") switch
         {
-            "contract-sent-to-signer" => HandleContractSent(request, node),
-            "contract-signed" => HandleContractSigned(request, node),
-            "contract-withdrawn" => HandleContractWithdrawn(request, node),
-            "signer-viewed-the-contract" => HandleSignerViewed(request, node),
-            "signer-signed" => HandleSignerSigned(request, node),
-            "signer-declined" => HandleSignerDeclined(request, node),
-            "signer-mobile-update-request" => HandleMobileUpdate(request, node),
-            "error" => HandleWebHookError(request, node),
-            _ => GetResponse(request, BadRequest, "Invalid \"Status\" Value")
+            "contract-sent-to-signer" => HandleContractSentAsync(request, node),
+            "contract-signed" => HandleContractSignedAsync(request, node),
+            "contract-withdrawn" => HandleContractWithdrawnAsync(request, node),
+            "signer-viewed-the-contract" => HandleSignerViewedAsync(request, node),
+            "signer-signed" => HandleSignerSignedAsync(request, node),
+            "signer-declined" => HandleSignerDeclinedAsync(request, node),
+            "signer-mobile-update-request" => HandleMobileUpdateAsync(request, node),
+            "error" => HandleWebHookErrorAsync(request, node),
+            _ => GetResponseAsync(request, BadRequest, "Invalid \"Status\" Value")
         };
 
-        return data;
+        return await response;
     }
 
-    private static HttpResponseData GetResponse(
+    private static async Task<HttpResponseData> GetResponseAsync(
         HttpRequestData request, HttpStatusCode statusCode, string message)
     {
+        await Task.CompletedTask;
+
         var response = request.CreateResponse(statusCode);
 
         response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
@@ -73,7 +77,7 @@ public class WebHooks
         return response;
     }
 
-    private HttpResponseData HandleContractSent(
+    private async Task<HttpResponseData> HandleContractSentAsync(
         HttpRequestData request, JsonNode? node)
     {
         var data = ContractSent.Create(node!);
@@ -82,22 +86,30 @@ public class WebHooks
         // TODO: change and expand to logger.Debug
         logger.LogWarning(data.ToJson(options));
 
-        return GetResponse(request, OK, "Received");
+        return await GetResponseAsync(request, OK, "Received");
     }
 
-    private HttpResponseData HandleContractSigned(
+    private async Task<HttpResponseData> HandleContractSignedAsync(
         HttpRequestData request, JsonNode? node)
     {
         var data = ContractSigned.Create(node);
 
+        var json = data.ToJson(options);
+
+        //var blob = container.GetBlobClient(data.GetBlobName(""));
+
+
+
+        //await blob.UploadAsync(json);
+
         // TODO: raise EventSink event
         // TODO: change and expand to logger.Debug
-        logger.LogWarning(data.ToJson(options));
+        logger.LogWarning(json);
 
-        return GetResponse(request, OK, "Received");
+        return await GetResponseAsync(request, OK, "Received");
     }
 
-    private HttpResponseData HandleContractWithdrawn(
+    private async Task<HttpResponseData> HandleContractWithdrawnAsync(
         HttpRequestData request, JsonNode? node)
     {
         var data = ContractWithdrawn.Create(node);
@@ -106,10 +118,10 @@ public class WebHooks
         // TODO: change and expand to logger.Debug
         logger.LogWarning(data.ToJson(options));
 
-        return GetResponse(request, OK, "Received");
+        return await GetResponseAsync(request, OK, "Received");
     }
 
-    private HttpResponseData HandleSignerViewed(
+    private async Task<HttpResponseData> HandleSignerViewedAsync(
         HttpRequestData request, JsonNode? node)
     {
         var data = SignerViewed.Create(node);
@@ -118,10 +130,10 @@ public class WebHooks
         // TODO: change and expand to logger.Debug
         logger.LogWarning(data.ToJson(options));
 
-        return GetResponse(request, OK, "Received");
+        return await GetResponseAsync(request, OK, "Received");
     }
 
-    private HttpResponseData HandleSignerSigned(
+    private async Task<HttpResponseData> HandleSignerSignedAsync(
         HttpRequestData request, JsonNode? node)
     {
         var data = SignerSigned.Create(node);
@@ -130,10 +142,10 @@ public class WebHooks
         // TODO: change and expand to logger.Debug
         logger.LogWarning(data.ToJson(options));
 
-        return GetResponse(request, OK, "Received");
+        return await GetResponseAsync(request, OK, "Received");
     }
 
-    private HttpResponseData HandleSignerDeclined(
+    private async Task<HttpResponseData> HandleSignerDeclinedAsync(
         HttpRequestData request, JsonNode? node)
     {
         var data = SignerDeclined.Create(node);
@@ -142,10 +154,10 @@ public class WebHooks
         // TODO: change and expand to logger.Debug
         logger.LogWarning(data.ToJson(options));
 
-        return GetResponse(request, OK, "Received");
+        return await GetResponseAsync(request, OK, "Received");
     }
 
-    private HttpResponseData HandleMobileUpdate(
+    private async Task<HttpResponseData> HandleMobileUpdateAsync(
         HttpRequestData request, JsonNode? node)
     {
         var data = MobileUpdate.Create(node);
@@ -154,10 +166,10 @@ public class WebHooks
         // TODO: change and expand to logger.Debug
         logger.LogWarning(data.ToJson(options));
 
-        return GetResponse(request, OK, "Received");
+        return await GetResponseAsync(request, OK, "Received");
     }
 
-    private HttpResponseData HandleWebHookError(
+    private async Task<HttpResponseData> HandleWebHookErrorAsync(
         HttpRequestData request, JsonNode? node)
     {
         var data = WebHookError.Create(node);
@@ -166,6 +178,6 @@ public class WebHooks
         // TODO: change and expand to logger.Debug
         logger.LogWarning(data.ToJson(options));
 
-        return GetResponse(request, OK, "Received");
+        return await GetResponseAsync(request, OK, "Received");
     }
 }

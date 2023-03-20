@@ -3,24 +3,24 @@ using static System.StringSplitOptions;
 
 namespace SquidEyes.ESignatures;
 
-internal class EmailValidator
+public static class EmailValidator
 {
     // DATA
     // "https://raw.githubusercontent.com/disposable-email-domains/disposable-email-domains/master/disposable_email_blocklist.conf";
     // "https://data.iana.org/TLD/tlds-alpha-by-domain.txt";
 
-    private readonly HashSet<string> blockedDomains;
-    private readonly HashSet<string> topLevelDomains;
+    private static readonly HashSet<string> blockedDomains;
+    private static readonly HashSet<string> topLevelDomains;
 
-    public EmailValidator()
+    static EmailValidator()
     {
         blockedDomains = Parse(BlockedDomains, "//");
         topLevelDomains = Parse(TopLevelDomains, "#");
     }
 
-    public bool IsValid(string value)
+    public static bool IsEmailAddress(string value)
     {
-        if (!IsEmailAddress(value))
+        if (!IsWellFormed(value))
             return false;
 
         var domain = value.Split('@')[1];
@@ -39,7 +39,7 @@ internal class EmailValidator
         return new HashSet<string>(lines);
     }
 
-    private bool IsEmailAddress(string value)
+    private static bool IsWellFormed(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
             return false;
