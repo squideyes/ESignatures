@@ -2,6 +2,7 @@
 using SquidEyes.ESignatures.Internal;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -21,7 +22,7 @@ public class ContractSender
     private readonly Uri contractsUri;
     private readonly Guid templateId;
 
-    private readonly Dictionary<string, TagValue> tagValues = new();
+    private readonly Metadata metadata = new();
     private readonly Dictionary<string, Signer> signers = new();
     private readonly Dictionary<string, string> placeholders = new();
 
@@ -87,7 +88,7 @@ public class ContractSender
 
     public ContractSender WithMetadata<T>(string tag, T value)
     {
-        tagValues.Add(tag, TagValue.Create(tag, value));
+        metadata.Add(tag, TagValue.Create(tag, value));
 
         return this;
     }
@@ -161,16 +162,6 @@ public class ContractSender
                     "A contract must have one or more signers!");
             }
 
-            var sb = new StringBuilder();
-
-            foreach (var tagValue in tagValues)
-            {
-                if (sb.Length > 0)
-                    sb.Append('|');
-
-                sb.Append(tagValue.Value.ToString());
-            }
-
             var data = new ContractData()
             {
                 TemplateId = templateId.ToString(),
@@ -179,7 +170,8 @@ public class ContractSender
                 WebHook = webHookUri?.AbsoluteUri!,
                 ExpireHours = expiryInHours,
                 Locale = locale.ToCode(),
-                Metadata = sb.Length == 0 ? null! : sb.ToString()
+                Metadata = metadata.Count == 0 ? 
+                    null! : metadata.ToString()
             };
 
             if (signers.Count > 0)

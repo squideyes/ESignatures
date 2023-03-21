@@ -1,38 +1,20 @@
-﻿using System.Text;
+﻿using System.Collections;
 
 namespace SquidEyes.ESignatures;
 
-public class Metadata
+public class Metadata : IEnumerable<TagValue>
 {
-    private readonly Dictionary<string, object> keyValues = new();
+    private readonly Dictionary<string, TagValue> tagValues = new();
 
-    public void Add(string key, object value)
-    {
-        if (!key.IsToken())
-            throw new ArgumentOutOfRangeException(nameof(key));
+    public void Add(string key, object value) =>
+        tagValues[key] = TagValue.Create(key, value);
 
-        if (value == null)
-            throw new ArgumentNullException(nameof(value));
+    public int Count => tagValues.Count;
 
-        keyValues[key] = value.ToString()!;
-    }
+    public override string ToString() => string.Join("|", tagValues);
 
-    public int Count => keyValues.Count;
+    public IEnumerator<TagValue> GetEnumerator() =>
+        tagValues.Values.GetEnumerator();
 
-    public override string ToString()
-    {
-        var sb = new StringBuilder();
-
-        foreach (var kv in keyValues)
-        {
-            if (sb.Length > 0)
-                sb.Append("|");
-
-            sb.Append(kv.Key);
-            sb.Append('=');
-            sb.Append(kv.Value);
-        }
-
-        return sb.ToString();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

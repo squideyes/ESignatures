@@ -33,15 +33,25 @@ public readonly partial struct TagValue
     public TimeOnly GetTimeOnly() => GetValue<TimeOnly>();
     public TimeSpan GetTimeSpan() => GetValue<TimeSpan>();
 
+    public ShortId GetShortId(int length = 8)
+    {
+        if (type != typeof(ShortId))
+            ThrowInvalidCastError();
+
+        var shortId = (ShortId)Convert.ChangeType(value, type);
+
+        if (shortId.Length != length)
+            ThrowInvalidCastError();
+
+        return shortId;
+    }
+
     public override string ToString() => $"{typeCode}&{Tag}&{value}";
 
     private T GetValue<T>()
     {
         if (typeof(T) != type)
-        {
-            throw new InvalidOperationException(
-                "A value may only be cast to it's original type!");
-        }
+            ThrowInvalidCastError();
 
         return (T)Convert.ChangeType(value, type);
     }
@@ -66,6 +76,12 @@ public readonly partial struct TagValue
             "DemoCommon.ClientId" => "ClientId",
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
+    }
+
+    private static void ThrowInvalidCastError()
+    {
+        throw new InvalidOperationException(
+            "A value may only be cast to it's original type!");
     }
 
     private static bool IsValidType(object value)
@@ -119,7 +135,7 @@ public readonly partial struct TagValue
         if (!IsValidType(value!))
             throw new ArgumentOutOfRangeException(nameof(value));
 
-        if (value is string text && text.Contains("&"))
+        if (value is string text && text.Contains('&'))
             throw new ArgumentOutOfRangeException(nameof(value));
 
         return new TagValue(tag, value!);

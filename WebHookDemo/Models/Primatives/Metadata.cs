@@ -4,7 +4,7 @@ namespace WebHookDemo;
 
 public class Metadata
 {
-    public required ClientId ClientId { get; init; }
+    public required ShortId ClientId { get; init; }
     public required ContractKind ContractKind { get; init; }
 
     public static Metadata Parse(string value)
@@ -22,12 +22,14 @@ public class Metadata
             var v = fields[2];
         }
 
-        var dict = new Dictionary<string, string>(keyValues);
+        //var dict = new Dictionary<string, string>(keyValues);
 
-        return new Metadata()
-        {
-            ClientId = ClientId.From(dict["ClientId"]),
-            ContractKind = Enum.Parse<ContractKind>(dict["ContractKind"], true)
-        };
+        return null;
+
+        //return new Metadata()
+        //{
+        //    ClientId = ClientId.From(dict["ClientId"]),
+        //    ContractKind = Enum.Parse<ContractKind>(dict["ContractKind"], true)
+        //};
     }
 }

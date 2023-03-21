@@ -25,7 +25,7 @@ try
 
     var request = new ContractSender(authToken, templateId)
         .WithTitle($"Joint Marketing Agreement ({partner.Name})")
-        .WithMetadata("client-id", ClientId.Next())
+        .WithMetadata("client-id", ShortId.Next())
         .WithMetadata("contract-kind", ContractKind.Partnership)
         .WithPlaceholder("day", date.ToDayName())
         .WithPlaceholder("month", date.ToMonthName())
