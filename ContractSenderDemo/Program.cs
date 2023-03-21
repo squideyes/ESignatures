@@ -1,6 +1,7 @@
 ﻿using DemoCommon;
 using Microsoft.Extensions.Configuration;
 using SquidEyes.ESignatures;
+using static DemoCommon.SignerKind;
 
 var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
@@ -20,28 +21,19 @@ var cts = new CancellationTokenSource();
 
 try
 {
-    var vendor = GetSigner(
-        SignerKind.Vendor, vendorEmail, vendorMobile, 1);
-
-    var partner = GetSigner(
-        SignerKind.Partner, partnerEmail, partnerMobile, 0);
+    var partner = GetSigner(Partner, partnerEmail, partnerMobile, 0);
 
     var request = new ContractSender(authToken, templateId)
-        .AddPlaceholder("day", date.ToDayName())
-        .AddPlaceholder("month", date.ToMonthName())
-        .AddPlaceholder("year", date.Year)
-        .AddPlaceholder("partner-company", partner.Company!)
-        .AddPlaceholder("partner-knownas", partner.KnownAs!)
-        .AddPlaceholder("partner-region", partner.Region!)
-        .AddPlaceholder("partner-address", partner.GetOneLineAddress())
-        .AddPlaceholder("vendor-company", vendor.Company!)
-        .AddPlaceholder("vendor-knownas", vendor.KnownAs!)
-        .AddPlaceholder("vendor-region", vendor.Region!)
-        .AddPlaceholder("vendor-address", vendor.GetOneLineAddress())
-        .WithMetadata("client-id", "ABC12345")
+        .WithTitle($"Joint Marketing Agreement ({partner.Name})")
+        .WithMetadata("client-id", ClientId.Next())
         .WithMetadata("contract-kind", ContractKind.Partnership)
+        .WithPlaceholder("day", date.ToDayName())
+        .WithPlaceholder("month", date.ToMonthName())
+        .WithPlaceholder("year", date.Year)
         .WithLocale(Locale.EN)
-        .AddSigners(partner, vendor)
+        .WithExpiryInHours(6)
+        .WithSigner(GetSigner(Vendor, vendorEmail, vendorMobile, 1))
+        .WithSigner(partner)
         .WithWebHook(new Uri(baseUri, "/api/WebHook"))
         .AsTest();
 

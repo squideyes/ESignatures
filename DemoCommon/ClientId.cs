@@ -1,9 +1,14 @@
-﻿namespace WebHookDemo;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
-public readonly struct ClientId : IEquatable<ClientId>
+namespace DemoCommon;
+
+public readonly struct ClientId : IEquatable<ClientId>, IParsable<ClientId>
 {
     private static readonly char[] charSet =
         "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
+
+    private static readonly Random random = new(9876);
 
     private ClientId(string value)
     {
@@ -12,9 +17,7 @@ public readonly struct ClientId : IEquatable<ClientId>
 
     private string Value { get; }
 
-    public override string ToString() => AsString();
-
-    public string AsString() => Value;
+    public override string ToString() => Value;
 
     public bool Equals(ClientId other) => Value == other.Value;
 
@@ -22,6 +25,16 @@ public readonly struct ClientId : IEquatable<ClientId>
         other is ClientId clientId && Equals(clientId);
 
     public override int GetHashCode() => Value.GetHashCode();
+
+    public static ClientId Next()
+    {
+        var sb = new StringBuilder(8);
+
+        for (var i = 0; i < 8; i++)
+            sb.Append(charSet[random.Next(8)]);
+
+        return From(sb.ToString());
+    }
 
     public static bool IsValue(string value)
     {
@@ -40,6 +53,16 @@ public readonly struct ClientId : IEquatable<ClientId>
             throw new ArgumentOutOfRangeException(nameof(value));
 
         return new ClientId(value);
+    }
+
+    public static ClientId Parse(string s, IFormatProvider? provider) =>
+        From(s);
+
+    public static bool TryParse([NotNullWhen(true)] string? s,
+        IFormatProvider? provider,
+        [MaybeNullWhen(false)] out ClientId result)
+    {
+        return Safe.TryGetValue(() => Parse(s!, null), out result);
     }
 
     public static bool operator ==(ClientId left, ClientId right) =>

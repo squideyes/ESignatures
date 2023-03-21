@@ -9,11 +9,18 @@ public class Metadata
 
     public static Metadata Parse(string value)
     {
-        if (value is null)
+        if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentOutOfRangeException(nameof(value));
 
-        var keyValues = value.Split('|').Select(v => v.Split('=')
-            .Get(v => new KeyValuePair<string, string>(v[0], v[1])));
+        foreach (var chunk in value.Split('|'))
+        {
+            var fields = chunk.Split('&');
+
+            //var tagValue = TagValue.Create
+            var typeCode = fields[0];
+            var tag = fields[1];
+            var v = fields[2];
+        }
 
         var dict = new Dictionary<string, string>(keyValues);
 

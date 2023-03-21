@@ -12,12 +12,11 @@ internal static partial class MiscExtenders
     public static bool IsToken(this string value) =>
         !string.IsNullOrWhiteSpace(value) && tokenValidator.IsMatch(value);
 
-    public static bool IsNonEmptyAndTrimmed(this string value)
-    {
-        return !string.IsNullOrEmpty(value)
-            && !char.IsWhiteSpace(value[0])
-            && !char.IsWhiteSpace(value[^1]);
-    }
+    public static bool IsEmptyOrTrimmed(this string value) =>
+        value is not null && (value == "" || value.IsTrimmed());
+
+    public static bool IsNonEmptyAndTrimmed(this string value) =>
+        !string.IsNullOrEmpty(value) && value.IsTrimmed();
 
     private static readonly PhoneNumbers.PhoneNumberUtil pnu =
         PhoneNumbers.PhoneNumberUtil.GetInstance();
@@ -63,6 +62,8 @@ internal static partial class MiscExtenders
 
         sb.Append(value);
     }
+    private static bool IsTrimmed(this string value) =>
+        !char.IsWhiteSpace(value[0]) && !char.IsWhiteSpace(value[^1]);
 
     [GeneratedRegex("^[A-Z][A-Za-z0-9]{0,23}$")]
     private static partial Regex GetTokenValidator();

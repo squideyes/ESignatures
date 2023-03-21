@@ -2,7 +2,7 @@
   "profiles": {
     "ContractSenderDemo": {
       "commandName": "Project",
-      "commandLineArgs": "--BaseUri=https://7dec-100-11-58-116.ngrok.io/\r\n--PartnerEmail=louis@squideyes.com\r\n--PartnerMobile=+1215316-8538\r\n--VendorEmail=louis@squideyes.com\r\n--VendorMobile=+12153168538\r\n--TemplateId=afc57fcf-77d1-4736-9ef6-ae2a51a13f8b"
+      "commandLineArgs": "--BaseUri=https://d543-100-11-58-116.ngrok.io\r\n--PartnerEmail=louis@squideyes.com\r\n--PartnerMobile=+1215316-8538\r\n--VendorEmail=louis@squideyes.com\r\n--VendorMobile=+12153168538\r\n--TemplateId=afc57fcf-77d1-4736-9ef6-ae2a51a13f8b"
     }
   }
 }

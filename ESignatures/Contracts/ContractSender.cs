@@ -2,6 +2,7 @@
 using SquidEyes.ESignatures.Internal;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -20,13 +21,15 @@ public class ContractSender
     private readonly Uri contractsUri;
     private readonly Guid templateId;
 
-    private readonly Metadata metadata = new();
+    private readonly Dictionary<string, TagValue> tagValues = new();
     private readonly Dictionary<string, Signer> signers = new();
     private readonly Dictionary<string, string> placeholders = new();
 
     private Uri webHookUri = null!;
     private bool isTest = false;
     private Locale locale = Locale.EN;
+    private int expiryInHours = 48;
+    private string? title = null!;
 
     public ContractSender(Guid authToken, Guid templateId)
     {
@@ -42,12 +45,32 @@ public class ContractSender
             $"https://esignatures.io/api/contracts?token={authToken}");
     }
 
+    public ContractSender WithTitle(string title)
+    {
+        if (title is not null && string.IsNullOrWhiteSpace(title))
+            throw new ArgumentOutOfRangeException(nameof(title));
+
+        this.title = title!;
+
+        return this;
+    }
+
     public ContractSender WithWebHook(Uri uri)
     {
         if (!uri.IsAbsoluteUri)
             throw new ArgumentOutOfRangeException(nameof(uri));
 
         webHookUri = uri;
+
+        return this;
+    }
+
+    public ContractSender WithExpiryInHours(int hours)
+    {
+        if (expiryInHours < 1 || expiryInHours > 168)
+            throw new ArgumentOutOfRangeException(nameof(expiryInHours));
+
+        expiryInHours = hours;
 
         return this;
     }
@@ -62,9 +85,9 @@ public class ContractSender
         return this;
     }
 
-    public ContractSender WithMetadata(string key, object value)
+    public ContractSender WithMetadata<T>(string tag, T value)
     {
-        metadata.Add(key, value);
+        tagValues.Add(tag, TagValue.Create(tag, value));
 
         return this;
     }
@@ -76,22 +99,30 @@ public class ContractSender
         return this;
     }
 
-    public ContractSender AddPlaceholder(string apiKey, object value)
+    public ContractSender WithPlaceholder(string key, object value)
     {
-        if (!apiKey.IsApiKey())
-            throw new ArgumentOutOfRangeException(nameof(apiKey));
+        if (!key.IsApiKey())
+            throw new ArgumentOutOfRangeException(nameof(key));
 
         ArgumentNullException.ThrowIfNull(value);
 
-        placeholders.Add(apiKey, value.ToString()!);
+        placeholders.Add(key, value.ToString()!);
 
         return this;
     }
 
-    public ContractSender AddSigners(params Signer[] signers)
+    public ContractSender WithSigner(
+        Signer signer, bool withPlacholders = true)
     {
-        foreach (var signer in signers)
-            this.signers.Add(signer.GetSha256Hash(), signer);
+        signers.Add(signer.GetSha256Hash(), signer);
+
+        if (withPlacholders)
+        {
+            var placeholders = signer.AsPlaceholders();
+
+            foreach (var key in placeholders.Keys)
+                WithPlaceholder(key, placeholders[key]);
+        }
 
         return this;
     }
@@ -130,13 +161,25 @@ public class ContractSender
                     "A contract must have one or more signers!");
             }
 
+            var sb = new StringBuilder();
+
+            foreach (var tagValue in tagValues)
+            {
+                if (sb.Length > 0)
+                    sb.Append('|');
+
+                sb.Append(tagValue.Value.ToString());
+            }
+
             var data = new ContractData()
             {
                 TemplateId = templateId.ToString(),
+                Title = title!,
                 IsTest = isTest ? "yes" : "no",
                 WebHook = webHookUri?.AbsoluteUri!,
+                ExpireHours = expiryInHours,
                 Locale = locale.ToCode(),
-                Metadata = metadata.Count == 0 ? null! : metadata.ToString()
+                Metadata = sb.Length == 0 ? null! : sb.ToString()
             };
 
             if (signers.Count > 0)

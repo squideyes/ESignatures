@@ -6,14 +6,17 @@ public readonly partial struct TagValue
 {
     private static readonly Regex tagValidator = GetTagValidator();
 
-    private readonly Type type;
     private readonly object value;
+    private readonly Type type;
+    private readonly string typeCode;
 
     private TagValue(string tag, object value)
     {
         Tag = tag;
-        type = value.GetType();
         this.value = value;
+
+        type = value.GetType();
+        typeCode = GetTypeCode();
     }
 
     public string Tag { get; }
@@ -30,6 +33,8 @@ public readonly partial struct TagValue
     public TimeOnly GetTimeOnly() => GetValue<TimeOnly>();
     public TimeSpan GetTimeSpan() => GetValue<TimeSpan>();
 
+    public override string ToString() => $"{typeCode}&{Tag}&{value}";
+
     private T GetValue<T>()
     {
         if (typeof(T) != type)
@@ -39,6 +44,28 @@ public readonly partial struct TagValue
         }
 
         return (T)Convert.ChangeType(value, type);
+    }
+
+    private string GetTypeCode()
+    {
+        if (type.IsEnum)
+            return type.Name;
+
+        return type.FullName switch
+        {
+            "System.Boolean" => "Boolean",
+            "System.DateOnly" => "DateOnly",
+            "System.DateTime" => "DateTime",
+            "System.Double" => "Double",
+            "System.Int32" => "Int32",
+            "System.Int64" => "Int64",
+            "System.Single" => "Single",
+            "System.String" => "String",
+            "System.TimeOnly" => "TimeOnly",
+            "System.TimeSpan" => "TimeSpan",
+            "DemoCommon.ClientId" => "ClientId",
+            _ => throw new ArgumentOutOfRangeException(nameof(type))
+        };
     }
 
     private static bool IsValidType(object value)
@@ -60,7 +87,27 @@ public readonly partial struct TagValue
             "System.String" => true,
             "System.TimeOnly" => true,
             "System.TimeSpan" => true,
+            "DemoCommon.ClientId" => true,
             _ => false
+        };
+    }
+
+    public static TagValue Create(string tag, string typeCode, string value)
+    {
+        return typeCode switch
+        {
+            "Boolean" => Create(tag, bool.Parse(value)),
+            "DateOnly" => Create(tag, DateOnly.Parse(value)),
+            "DateTime" => Create(tag, DateTime.Parse(value)),
+            "Double" => Create(tag, double.Parse(value)),
+            "Int32" => Create(tag, int.Parse(value)),
+            "Int64" => Create(tag, long.Parse(value)),
+            "Single" => Create(tag, float.Parse(value)),
+            "String" => Create(tag, value),
+            "TimeOnly" => Create(tag, TimeOnly.Parse(value)),
+            "TimeSpan" => Create(tag, TimeSpan.Parse(value)),
+            "ClientId" => Create(tag, value),
+            _ => throw new ArgumentOutOfRangeException(nameof(value))
         };
     }
 
@@ -70,6 +117,9 @@ public readonly partial struct TagValue
             throw new ArgumentOutOfRangeException(nameof(tag));
 
         if (!IsValidType(value!))
+            throw new ArgumentOutOfRangeException(nameof(value));
+
+        if (value is string text && text.Contains("&"))
             throw new ArgumentOutOfRangeException(nameof(value));
 
         return new TagValue(tag, value!);

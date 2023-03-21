@@ -7,6 +7,12 @@ internal class ContractData
     [JsonPropertyName("template_id")]
     public required string TemplateId { get; init; }
 
+    [JsonPropertyName("title")]
+    public required string Title { get; init; }
+
+    [JsonPropertyName("expires_in_hours")]
+    public required int ExpireHours { get; init; }
+
     [JsonPropertyName("locale")]
     public required string Locale { get; init; }
 

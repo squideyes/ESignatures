@@ -59,9 +59,10 @@ public class Signer
                 .WithMessage("'Address1' must be non-empty and trimmed.");
 
             RuleFor(x => x.Address2)
-                .Must(v => v!.IsNonEmptyAndTrimmed())
-                .WithMessage("'Address2' must be non-empty and trimmed.")
-                .When(v => v is not null);
+                .Cascade(CascadeMode.Stop)
+                .NotNull()
+                .Must(v => v!.IsEmptyOrTrimmed())
+                .WithMessage("'Address2' must be empty or trimmed.");
 
             RuleFor(x => x.Locality)
                 .Cascade(CascadeMode.Stop)
@@ -100,7 +101,7 @@ public class Signer
     public required string Mobile { get; init; }
     public required string Country { get; init; }
     public required string Address1 { get; init; }
-    public string? Address2 { get; init; }
+    public string Address2 { get; init; } = "";
     public required string Locality { get; init; }
     public required string Region { get; init; }
     public required string PostalCode { get; init; }
@@ -128,7 +129,7 @@ public class Signer
 
         sb.Append(Address1);
 
-        if (Address2 != null)
+        if (!string.IsNullOrEmpty(Address2))
             sb.AppendDelimited(Address2, ", ");
 
         sb.AppendDelimited(Locality!, ", ");
@@ -141,23 +142,24 @@ public class Signer
 
     public Dictionary<string, string> AsPlaceholders()
     {
-        var prefix = Name.ToLower() + "-";
+        var prefix = Kind.ToLower() + "-";
 
         var dict = new Dictionary<string, string>
         {
-            { prefix + "signer-kind", Kind! },
-            { prefix + "name", Name! },
-            { prefix + "email", Email! },
-            { prefix + "mobile", Mobile! },
-            { prefix + "company", Company! },
-            { prefix + "known-as", KnownAs! },
-            { prefix + "one-line-address", GetOneLineAddress() },
-            { prefix + "country", Country! },
             { prefix + "address1", Address1! },
             { prefix + "address2", Address2! },
+            { prefix + "company", Company! },
+            { prefix + "country", Country! },
+            { prefix + "email", Email! },
+            { prefix + "kind", Kind! },
+            { prefix + "known-as", KnownAs! },
             { prefix + "locality", Locality! },
+            { prefix + "mobile", Mobile! },
+            { prefix + "name", Name! },
+            { prefix + "postal-code", PostalCode! },
+            { prefix + "one-line-address", GetOneLineAddress() },
             { prefix + "region", Region! },
-            { prefix + "postal-code", PostalCode! }
+            { prefix + "signer-kind", Kind! }
         };
 
         return dict;
