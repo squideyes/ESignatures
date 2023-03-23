@@ -1,9 +1,8 @@
 ﻿using OneOf;
+using SquidEyes.Basics;
 using SquidEyes.ESignatures.Internal;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -22,7 +21,7 @@ public class ContractSender
     private readonly Uri contractsUri;
     private readonly Guid templateId;
 
-    private readonly Metadata metadata = new();
+    private readonly Dictionary<string, string> metadata = new();
     private readonly Dictionary<string, Signer> signers = new();
     private readonly Dictionary<string, string> placeholders = new();
 
@@ -86,9 +85,33 @@ public class ContractSender
         return this;
     }
 
-    public ContractSender WithMetadata<T>(string tag, T value)
+    public ContractSender WithMetadata<T>(string token, T value)
     {
-        metadata.Add(tag, TagValue.Create(tag, value));
+        if (!token.IsToken())
+            throw new ArgumentOutOfRangeException(nameof(token));
+
+        switch (value)
+        {
+            case bool _:
+            case ClientId _:
+            case DateOnly _:
+            case DateTime _:
+            case double _:
+            case Enum _:
+            case float _:
+            case Guid _:
+            case int _:
+            case long _:
+            case string _:
+            case ShortId _:
+            case TimeOnly _:
+            case TimeSpan _:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(value));
+        };
+
+        metadata.Add(token, value.ToString()!);
 
         return this;
     }
@@ -96,6 +119,15 @@ public class ContractSender
     public ContractSender AsTest()
     {
         isTest = true;
+
+        return this;
+    }
+
+    public ContractSender WithDayMonthYear(DateOnly date)
+    {
+        placeholders.Add("day", date.ToDayName());
+        placeholders.Add("month", date.ToMonthName());
+        placeholders.Add("year", date.Year.ToString());
 
         return this;
     }
@@ -162,16 +194,18 @@ public class ContractSender
                     "A contract must have one or more signers!");
             }
 
+            var metadata = this.metadata.Count == 0 ? null! : string.Join(
+                '|', this.metadata.Select(kv => kv.Key + "=" + kv.Value));
+
             var data = new ContractData()
             {
+                ExpireHours = expiryInHours,
+                IsTest = isTest ? "yes" : "no",
+                Locale = locale.ToCode(),
+                Metadata = metadata,
                 TemplateId = templateId.ToString(),
                 Title = title!,
-                IsTest = isTest ? "yes" : "no",
-                WebHook = webHookUri?.AbsoluteUri!,
-                ExpireHours = expiryInHours,
-                Locale = locale.ToCode(),
-                Metadata = metadata.Count == 0 ? 
-                    null! : metadata.ToString()
+                WebHook = webHookUri?.AbsoluteUri!
             };
 
             if (signers.Count > 0)

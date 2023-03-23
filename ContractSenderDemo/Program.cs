@@ -1,38 +1,49 @@
-﻿using DemoCommon;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
+using SharedModels;
+using SquidEyes.Basics;
 using SquidEyes.ESignatures;
-using static DemoCommon.SignerKind;
+using static SharedModels.SignerKind;
 
 var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
     .AddCommandLine(args)
     .Build();
 
+// Sourced from UserSecrets:
 var authToken = Guid.Parse(config["AuthToken"]!);
+
+// Sourced from command-line parameters
 var templateId = Guid.Parse(config["TemplateId"]!);
 var baseUri = new Uri(config["BaseUri"]!);
-var date = DateTime.Today;
 var partnerEmail = config["PartnerEmail"]!;
 var partnerMobile = config["PartnerMobile"]!;
 var vendorEmail = config["VendorEmail"]!;
 var vendorMobile = config["VendorMobile"]!;
+
+// Generated or known
+var date = DateOnly.FromDateTime(DateTime.Today);
+var clientId = ClientId.Next();
+var trackingId = ShortId.Next();
+var contractKind = ContractKind.JointMarketing;
 
 var cts = new CancellationTokenSource();
 
 try
 {
     var partner = GetSigner(Partner, partnerEmail, partnerMobile, 0);
+    var vendor = GetSigner(Vendor, vendorEmail, vendorMobile, 1);
 
     var request = new ContractSender(authToken, templateId)
-        .WithTitle($"Joint Marketing Agreement ({partner.Name})")
-        .WithMetadata("client-id", ShortId.Next())
-        .WithMetadata("contract-kind", ContractKind.Partnership)
-        .WithPlaceholder("day", date.ToDayName())
-        .WithPlaceholder("month", date.ToMonthName())
-        .WithPlaceholder("year", date.Year)
+        .WithTitle($"Marketing Agreement (w/{partner.Name})")
+        .WithMetadata("ClientId", clientId)
+        .WithMetadata("TrackingId", trackingId)
+        .WithMetadata("ContractKind", contractKind)
+        .WithDayMonthYear(date)
+        .WithPlaceholder("client-id", clientId)
+        .WithPlaceholder("tracking-id", trackingId)
         .WithLocale(Locale.EN)
         .WithExpiryInHours(6)
-        .WithSigner(GetSigner(Vendor, vendorEmail, vendorMobile, 1))
+        .WithSigner(vendor)
         .WithSigner(partner)
         .WithWebHook(new Uri(baseUri, "/api/WebHook"))
         .AsTest();

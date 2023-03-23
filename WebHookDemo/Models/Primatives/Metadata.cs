@@ -1,10 +1,10 @@
-﻿using DemoCommon;
+﻿using SharedModels;
 
 namespace WebHookDemo;
 
 public class Metadata
 {
-    public required ShortId ClientId { get; init; }
+    //public required ShortId ClientId { get; init; }
     public required ContractKind ContractKind { get; init; }
 
     public static Metadata Parse(string value)

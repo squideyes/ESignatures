@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using SquidEyes.Basics;
 using System.Text;
 using System.Text.Json.Serialization;
 using static SquidEyes.ESignatures.EmailValidator;
