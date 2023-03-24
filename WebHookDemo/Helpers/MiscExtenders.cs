@@ -17,12 +17,6 @@ internal static class MiscExtenders
     public static string GetString(this JsonNode? node, string propertyName) =>
         (string)node![propertyName]!;
 
-    public static string ToJson<T>(this T data, JsonSerializerOptions options)
-        where T : IWebHookData<T>, new()
-    {
-        return JsonSerializer.Serialize(data, options);
-    }
-
     public static JsonNode? GetData(this JsonNode? node, string status)
     {
         var actual = node.GetString("status");

@@ -1,35 +1,48 @@
 ﻿using SharedModels;
+using SquidEyes.Basics;
 
 namespace WebHookDemo;
 
 public class Metadata
 {
-    //public required ShortId ClientId { get; init; }
-    public required ContractKind ContractKind { get; init; }
+    private Metadata()
+    {
+    }
+
+    public ClientId ClientId { get; private set; }
+    public ShortId TrackingId { get; private set; }
+    public ContractKind ContractKind { get; private set; }
 
     public static Metadata Parse(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentOutOfRangeException(nameof(value));
 
-        foreach (var chunk in value.Split('|'))
-        {
-            var fields = chunk.Split('&');
+        var metadata = new Metadata();
 
-            //var tagValue = TagValue.Create
-            var typeCode = fields[0];
-            var tag = fields[1];
-            var v = fields[2];
+        foreach (var keyValue in value.Split('|'))
+        {
+            var fields = keyValue.Split('=');
+
+            if (fields.Length != 2)
+                throw new ArgumentOutOfRangeException(nameof(value));
+
+            switch(fields[0])
+            {
+                case nameof(ClientId):
+                    metadata.ClientId = ClientId.From(fields[1]);
+                    break;
+                case nameof(TrackingId):
+                    metadata.TrackingId = ShortId.From(fields[1]);
+                    break;
+                case nameof(ContractKind):
+                    metadata.ContractKind = Enum.Parse<ContractKind>(fields[1]);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(value));
+            }
         }
 
-        //var dict = new Dictionary<string, string>(keyValues);
-
-        return null;
-
-        //return new Metadata()
-        //{
-        //    ClientId = ClientId.From(dict["ClientId"]),
-        //    ContractKind = Enum.Parse<ContractKind>(dict["ContractKind"], true)
-        //};
+        return metadata;
     }
 }

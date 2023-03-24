@@ -1,13 +1,13 @@
+using Azure;
+using Azure.Messaging.EventGrid;
 using Azure.Storage.Blobs;
+using Azure.Storage.Queues;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net;
-using System.Text.Encodings.Web;
-using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using static System.Net.HttpStatusCode;
 
 namespace WebHookDemo;
@@ -15,31 +15,38 @@ namespace WebHookDemo;
 public class WebHooks
 {
     private readonly ILogger logger;
+    private readonly QueueClient queue;
     private readonly BlobContainerClient container;
-    private readonly JsonSerializerOptions options;
+    private readonly EventGridPublisherClient eventGrid;
+    private readonly ContractEventsToSend contractEventsToSend;
 
     public WebHooks(ILoggerFactory loggerFactory, IConfiguration config)
     {
         logger = loggerFactory.CreateLogger<WebHooks>();
 
-        container = new BlobContainerClient(
-            config["AzureWebJobsStorage"], "signatures");
+        var connString = config["AzureWebJobsStorage"];
 
-        options = new JsonSerializerOptions()
-        {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
+        queue = new QueueClient(connString,
+            config["Storage:Queues:ContractSigned"]);
 
-        options.Converters.Add(new JsonStringEnumConverter());
+        container = new BlobContainerClient(connString,
+            config["Storage:Containers:ESignatures"]);
+
+        contractEventsToSend = Enum.Parse<ContractEventsToSend>(
+            config["EventGrid:ContractSigned:ContractEventsToSend"]!);
+
+        eventGrid = new EventGridPublisherClient(
+            new Uri(config["EventGrid:ContractSigned:Uri"]!),
+            new AzureKeyCredential(config["EventGrid:ContractSigned:Key"]!));
     }
 
     [Function("WebHook")]
     public async Task<HttpResponseData> WebHookAsync(
-        [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData request)
+        [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData request,
+        CancellationToken cancellationToken)
     {
         if (!request.Headers.TryGetValues("Authorization", out var authHeader))
-            return await GetResponseAsync(request, Forbidden, "No Authorization Header!");
+            return GetResponse(request, Forbidden, "No Authorization Header!");
 
         // handle bad authHeader
 
@@ -49,25 +56,32 @@ public class WebHooks
 
         var response = node.GetString("status") switch
         {
-            "contract-sent-to-signer" => HandleContractSentAsync(request, node),
-            "contract-signed" => HandleContractSignedAsync(request, node),
-            "contract-withdrawn" => HandleContractWithdrawnAsync(request, node),
-            "signer-viewed-the-contract" => HandleSignerViewedAsync(request, node),
-            "signer-signed" => HandleSignerSignedAsync(request, node),
-            "signer-declined" => HandleSignerDeclinedAsync(request, node),
-            "signer-mobile-update-request" => HandleMobileUpdateAsync(request, node),
-            "error" => HandleWebHookErrorAsync(request, node),
-            _ => GetResponseAsync(request, BadRequest, "Invalid \"Status\" Value")
+            "contract-sent-to-signer" =>
+                await HandleContractSentAsync(request, node, cancellationToken),
+            "contract-signed" =>
+                await HandleContractSignedAsync(request, node, cancellationToken),
+            "contract-withdrawn" =>
+                await HandleContractWithdrawnAsync(request, node, cancellationToken),
+            "signer-viewed-the-contract" =>
+                await HandleSignerViewedAsync(request, node, cancellationToken),
+            "signer-signed" =>
+                await HandleSignerSignedAsync(request, node, cancellationToken),
+            "signer-declined" =>
+                await HandleSignerDeclinedAsync(request, node, cancellationToken),
+            "signer-mobile-update-request" =>
+                await HandleMobileUpdateAsync(request, node, cancellationToken),
+            "error" =>
+                await HandleWebHookErrorAsync(request, node, cancellationToken),
+            _ =>
+                GetResponse(request, BadRequest, "Invalid \"Status\" Value")
         };
 
-        return await response;
+        return response;
     }
 
-    private static async Task<HttpResponseData> GetResponseAsync(
+    private static HttpResponseData GetResponse(
         HttpRequestData request, HttpStatusCode statusCode, string message)
     {
-        await Task.CompletedTask;
-
         var response = request.CreateResponse(statusCode);
 
         response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
@@ -78,106 +92,179 @@ public class WebHooks
     }
 
     private async Task<HttpResponseData> HandleContractSentAsync(
-        HttpRequestData request, JsonNode? node)
+        HttpRequestData request, JsonNode? node, CancellationToken cancellationToken)
     {
+        await Task.CompletedTask;
+
         var data = ContractSent.Create(node!);
 
-        // TODO: raise EventSink event
-        // TODO: change and expand to logger.Debug
-        logger.LogWarning(data.ToJson(options));
+        var json = data.ToJson();
 
-        return await GetResponseAsync(request, OK, "Received");
+        if (!cancellationToken.IsCancellationRequested)
+            await SendEventAsync(data, json, cancellationToken);
+
+        // TODO: remove 
+        logger.LogWarning(json);
+
+        return GetResponse(request, OK, "Received");
+    }
+
+    private async Task SendEventAsync<T>(T data, string json, CancellationToken cancellationToken)
+        where T : IWebHookData<T>, new()
+    {
+        bool CanSend(ContractEventsToSend contractEventsToSend) =>
+            this.contractEventsToSend.HasFlag(contractEventsToSend);
+
+        var canSend = data switch
+        {
+            ContractSent _ => CanSend(ContractEventsToSend.ContractSent),
+            ContractSigned _ => CanSend(ContractEventsToSend.ContractSigned),
+            ContractWithdrawn _ => CanSend(ContractEventsToSend.ContractWithdrawn),
+            SignerViewed _ => CanSend(ContractEventsToSend.SignerViewed),
+            SignerSigned _ => CanSend(ContractEventsToSend.SignerSigned),
+            SignerDeclined _ => CanSend(ContractEventsToSend.SignerDeclined),
+            MobileUpdate _ => CanSend(ContractEventsToSend.MobileUpdate),
+            WebHookError _ => CanSend(ContractEventsToSend.WebHookError),
+            _ => throw new ArgumentOutOfRangeException(nameof(data))
+        };
+
+        if (!canSend)
+            return;
+
+        var events = new List<EventGridEvent>
+        {
+            new EventGridEvent(data.ToSubject(), typeof(T).FullName, "1.0", json),
+        };
+
+        await eventGrid.SendEventsAsync(events, cancellationToken);
     }
 
     private async Task<HttpResponseData> HandleContractSignedAsync(
-        HttpRequestData request, JsonNode? node)
+        HttpRequestData request, JsonNode? node, CancellationToken cancellationToken)
     {
         var data = ContractSigned.Create(node);
 
-        var json = data.ToJson(options);
+        var json = data.ToJson();
 
-        //var blob = container.GetBlobClient(data.GetBlobName(""));
+        var message = new BinaryData(json);
 
+        await queue.SendMessageAsync(
+            message, cancellationToken: cancellationToken);
 
+        if (!cancellationToken.IsCancellationRequested)
+            await SendEventAsync(data, json, cancellationToken);
 
-        //await blob.UploadAsync(json);
-
-        // TODO: raise EventSink event
-        // TODO: change and expand to logger.Debug
+        // TODO: remove 
         logger.LogWarning(json);
 
-        return await GetResponseAsync(request, OK, "Received");
+        return GetResponse(request, OK, "Received");
     }
 
     private async Task<HttpResponseData> HandleContractWithdrawnAsync(
-        HttpRequestData request, JsonNode? node)
+        HttpRequestData request, JsonNode? node, CancellationToken cancellationToken)
     {
+        await Task.CompletedTask;
+
         var data = ContractWithdrawn.Create(node);
 
-        // TODO: raise EventSink event
-        // TODO: change and expand to logger.Debug
-        logger.LogWarning(data.ToJson(options));
+        var json = data.ToJson();
 
-        return await GetResponseAsync(request, OK, "Received");
+        if (!cancellationToken.IsCancellationRequested)
+            await SendEventAsync(data, json, cancellationToken);
+
+        // TODO: remove 
+        logger.LogWarning(json);
+
+        return GetResponse(request, OK, "Received");
     }
 
     private async Task<HttpResponseData> HandleSignerViewedAsync(
-        HttpRequestData request, JsonNode? node)
+        HttpRequestData request, JsonNode? node, CancellationToken cancellationToken)
     {
+        await Task.CompletedTask;
+
         var data = SignerViewed.Create(node);
 
-        // TODO: raise EventSink event
-        // TODO: change and expand to logger.Debug
-        logger.LogWarning(data.ToJson(options));
+        var json = data.ToJson();
 
-        return await GetResponseAsync(request, OK, "Received");
+        if (!cancellationToken.IsCancellationRequested)
+            await SendEventAsync(data, json, cancellationToken);
+
+        // TODO: remove 
+        logger.LogWarning(json);
+
+        return GetResponse(request, OK, "Received");
     }
 
     private async Task<HttpResponseData> HandleSignerSignedAsync(
-        HttpRequestData request, JsonNode? node)
+        HttpRequestData request, JsonNode? node, CancellationToken cancellationToken)
     {
+        await Task.CompletedTask;
+
         var data = SignerSigned.Create(node);
 
-        // TODO: raise EventSink event
-        // TODO: change and expand to logger.Debug
-        logger.LogWarning(data.ToJson(options));
+        var json = data.ToJson();
 
-        return await GetResponseAsync(request, OK, "Received");
+        if (!cancellationToken.IsCancellationRequested)
+            await SendEventAsync(data, json, cancellationToken);
+
+        // TODO: remove 
+        logger.LogWarning(json);
+
+        return GetResponse(request, OK, "Received");
     }
 
     private async Task<HttpResponseData> HandleSignerDeclinedAsync(
-        HttpRequestData request, JsonNode? node)
+        HttpRequestData request, JsonNode? node, CancellationToken cancellationToken)
     {
+        await Task.CompletedTask;
+
         var data = SignerDeclined.Create(node);
 
-        // TODO: raise EventSink event
-        // TODO: change and expand to logger.Debug
-        logger.LogWarning(data.ToJson(options));
+        var json = data.ToJson();
 
-        return await GetResponseAsync(request, OK, "Received");
+        if (!cancellationToken.IsCancellationRequested)
+            await SendEventAsync(data, json, cancellationToken);
+
+        // TODO: remove 
+        logger.LogWarning(json);
+
+        return GetResponse(request, OK, "Received");
     }
 
     private async Task<HttpResponseData> HandleMobileUpdateAsync(
-        HttpRequestData request, JsonNode? node)
+        HttpRequestData request, JsonNode? node, CancellationToken cancellationToken)
     {
+        await Task.CompletedTask;
+
         var data = MobileUpdate.Create(node);
 
-        // TODO: raise EventSink event
-        // TODO: change and expand to logger.Debug
-        logger.LogWarning(data.ToJson(options));
+        var json = data.ToJson();
 
-        return await GetResponseAsync(request, OK, "Received");
+        if (!cancellationToken.IsCancellationRequested)
+            await SendEventAsync(data, json, cancellationToken);
+
+        // TODO: remove 
+        logger.LogWarning(json);
+
+        return GetResponse(request, OK, "Received");
     }
 
     private async Task<HttpResponseData> HandleWebHookErrorAsync(
-        HttpRequestData request, JsonNode? node)
+        HttpRequestData request, JsonNode? node, CancellationToken cancellationToken)
     {
+        await Task.CompletedTask;
+
         var data = WebHookError.Create(node);
 
-        // TODO: raise EventSink event
-        // TODO: change and expand to logger.Debug
-        logger.LogWarning(data.ToJson(options));
+        var json = data.ToJson();
 
-        return await GetResponseAsync(request, OK, "Received");
+        if (!cancellationToken.IsCancellationRequested)
+            await SendEventAsync(data, json, cancellationToken);
+
+        // TODO: remove 
+        logger.LogWarning(json);
+
+        return GetResponse(request, OK, "Received");
     }
 }

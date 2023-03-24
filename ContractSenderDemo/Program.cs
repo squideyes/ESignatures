@@ -41,6 +41,7 @@ try
         .WithDayMonthYear(date)
         .WithPlaceholder("client-id", clientId)
         .WithPlaceholder("tracking-id", trackingId)
+        .WithPlaceholder("contract-kind", contractKind)
         .WithLocale(Locale.EN)
         .WithExpiryInHours(6)
         .WithSigner(vendor)

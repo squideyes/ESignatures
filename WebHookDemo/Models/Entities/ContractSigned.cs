@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace WebHookDemo;
@@ -33,13 +34,21 @@ public class ContractSigned : IWebHookData<ContractSigned>
                 });
             }
 
+            Dictionary<string, string> fieldValues = null!;
+
+            var sfv = s!["signer_field_values"];
+
+            if (sfv != null)
+                JsonSerializer.Deserialize<Dictionary<string, string>>(sfv);
+
             signers.Add(new Signer()
             {
                 SignerId = Guid.Parse(s.GetString("id")),
                 Name = s.GetString("name"),
                 Email = s.GetString("email"),
                 Mobile = s.GetString("mobile"),
-                Events = events
+                Events = events,
+                FieldValues = fieldValues
             });
         }
 
@@ -54,4 +63,16 @@ public class ContractSigned : IWebHookData<ContractSigned>
     }
 
     public string GetBlobName() => $"Signed/{ContractId:N}.json";
+
+    public Dictionary<string, string> GetMetadata()
+    {
+        return new Dictionary<string, string>()
+        {
+            { "ContractId", ContractId.ToString() },
+            { "ClientId", Metadata!.ClientId.ToString() },
+            { "TrackingId", Metadata!.TrackingId.ToString() },
+            { "Signers", Signers.ToJson() },
+            { "ContractKind", Metadata!.ContractKind.ToString() }
+        };
+    }
 }

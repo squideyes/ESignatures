@@ -4,7 +4,7 @@ namespace WebHookDemo;
 
 public class WebHookError : IWebHookData<WebHookError>
 {
-    public Guid? ContractId { get; set; }
+    public Guid ContractId { get; set; }
     public Metadata? Metadata { get; set; }
     public string? ErrorCode { get; set; }
     public string? Message { get; set; }
