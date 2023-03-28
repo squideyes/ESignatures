@@ -1,4 +1,4 @@
-﻿namespace SquidEyes.ESignatures;
+﻿namespace ESignatures;
 
 public static class PostalCodeValidator
 {
@@ -118,10 +118,10 @@ public static class PostalCodeValidator
     public static bool IsPostalCode(string value, string country)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentOutOfRangeException(nameof(value));
+            return false;
 
         if (CountryValidator.IsCountryCode(country))
-            throw new ArgumentOutOfRangeException(nameof(value));
+            return false;
 
         if (!patterns.ContainsKey(country))
             throw new ArgumentOutOfRangeException(nameof(country));

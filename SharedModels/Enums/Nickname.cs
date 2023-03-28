@@ -1,6 +1,6 @@
 ﻿namespace SharedModels;
 
-public enum SignerKind
+public enum Nickname
 {
     Vendor = 1,
     Partner

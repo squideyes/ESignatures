@@ -4,8 +4,8 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>SquidEyes.ESignatures</AssemblyName>
-    <RootNamespace>SquidEyes.ESignatures</RootNamespace>
+    <AssemblyName>ESignatures</AssemblyName>
+    <RootNamespace>ESignatures</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

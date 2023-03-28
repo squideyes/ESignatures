@@ -1,4 +1,4 @@
-﻿namespace SquidEyes.ESignatures;
+﻿namespace ESignatures;
 
 public interface IMetadata<T>
     where T : IMetadata<T>, new()

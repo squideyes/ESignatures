@@ -1,4 +1,4 @@
-﻿namespace SquidEyes.ESignatures;
+﻿namespace ESignatures;
 
 public enum Locale
 {

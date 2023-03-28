@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 
-namespace SquidEyes.ESignatures;
+namespace ESignatures;
 
 internal static partial class MiscExtenders
 {

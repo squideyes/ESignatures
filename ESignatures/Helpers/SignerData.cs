@@ -1,11 +1,11 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace SquidEyes.ESignatures.Internal;
+namespace ESignatures.Internal;
 
 internal class SignerData
 {
     [JsonPropertyName("name")]
-    public required string Name { get; init; }
+    public required string FullName { get; init; }
 
     [JsonPropertyName("email")]
     public required string Email { get; init; }

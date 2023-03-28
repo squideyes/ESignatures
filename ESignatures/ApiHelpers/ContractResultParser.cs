@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SquidEyes.ESignatures;
+namespace ESignatures;
 
 internal class ContractResultParser
 {

@@ -1,8 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using ESignatures;
+using Microsoft.Extensions.Configuration;
 using SharedModels;
 using SquidEyes.Basics;
-using SquidEyes.ESignatures;
-using static SharedModels.SignerKind;
+using static SharedModels.Nickname;
 
 var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
@@ -30,23 +30,23 @@ var cts = new CancellationTokenSource();
 
 try
 {
-    var partner = GetSigner(Partner, partnerEmail, partnerMobile, 0);
-    var vendor = GetSigner(Vendor, vendorEmail, vendorMobile, 1);
+    var p = GetSignerInfo(Partner, partnerEmail, partnerMobile, 0);
+    var v = GetSignerInfo(Vendor, vendorEmail, vendorMobile, 1);
 
     var request = new ContractSender(authToken, templateId)
-        .WithTitle($"Marketing Agreement (w/{partner.Name})")
-        .WithMetadata("ClientId", clientId)
-        .WithMetadata("TrackingId", trackingId)
-        .WithMetadata("ContractKind", contractKind)
-        .WithDayMonthYear(date)
-        .WithPlaceholder("client-id", clientId)
-        .WithPlaceholder("tracking-id", trackingId)
-        .WithPlaceholder("contract-kind", contractKind)
-        .WithLocale(Locale.EN)
-        .WithExpiryInHours(6)
-        //.WithSigner(vendor)
-        .WithSigner(partner)
+        .WithTitle($"Marketing Agreement (w/{p.Signer.FullName})")
         .WithWebHook(new Uri(baseUri, "/api/WebHook"))
+        .WithExpiryInHours(6)
+        .WithLocale(Locale.EN)
+        .WithSigner(p.Signer, p.Handling, p.Address)
+        .WithSigner(v.Signer, v.Handling, v.Address)
+        .WithDayMonthYear(date)
+        .WithMetadata("ClientId", clientId)
+        .WithPlaceholder("client-id", clientId)
+        .WithMetadata("TrackingId", trackingId)
+        .WithPlaceholder("tracking-id", trackingId)
+        .WithMetadata("ContractKind", contractKind)
+        .WithPlaceholder("contract-kind", contractKind)
         .AsTest();
 
     (await request.SendAsync(cts.Token)).Switch(
@@ -57,23 +57,37 @@ catch(Exception error)
     Console.WriteLine("ERROR: " + error.Message);
 }
 
-SquidEyes.ESignatures.Signer GetSigner(SignerKind kind, string email, string mobile, int ordinal)
+SignerInfo GetSignerInfo(
+    Nickname nickname, string email, string mobile, int ordinal)
 {
-    return new SquidEyes.ESignatures.Signer()
+    var signer = new Signer()
     {
-        Kind = kind.ToString(),
-        Ordinal = ordinal,
-        Name = $"{kind} Mc{kind}",
+        FullName = $"{nickname} Mc{nickname}",
+        Nickname = nickname.ToString(),
         Email = email,
         Mobile = mobile,
-        Company = $"{kind}, Inc.",
-        KnownAs = $"{kind}",
+        Company = $"{nickname}, Inc.",
+    };
+
+    var signingPlan = new Handling()
+    {
+        Ordinal = ordinal,
+        IdBySms = true,
+        IdByEmail = true,
+        SigReqBy = Mode.Email,
+        GetDocBy = Mode.Email
+    };
+
+    var address = new Address()
+    {
         Country = "US",
-        Address1 = $"123 {kind} Blvd.",
-        Locality = $"{kind} Town",
+        Address1 = $"123 {nickname} Blvd.",
+        Locality = $"{nickname} Town",
         Region = "NY",
         PostalCode = "12345"
     };
+
+    return new SignerInfo(signer, signingPlan, address);
 }
 
 void HandleAccepted(ContractSender.Accepted accepted)

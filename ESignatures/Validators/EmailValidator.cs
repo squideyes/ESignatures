@@ -1,7 +1,7 @@
-﻿using static SquidEyes.ESignatures.Properties.Resources;
+﻿using static ESignatures.Properties.Resources;
 using static System.StringSplitOptions;
 
-namespace SquidEyes.ESignatures;
+namespace ESignatures;
 
 public static class EmailValidator
 {
