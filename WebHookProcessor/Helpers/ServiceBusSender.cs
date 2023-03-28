@@ -1,7 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
 using SharedModels;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using AMS = Azure.Messaging.ServiceBus;
 
 namespace WebHookProcessor;
@@ -35,18 +33,12 @@ internal sealed class ServiceBusSender : IAsyncDisposable
     private ServiceBusMessage GetMessage<T>(T data)
         where T : IWebHook<T>, new()
     {
-        var options = new JsonSerializerOptions();
-
-        options.Converters.Add(new JsonStringEnumConverter());
-
-        var json = JsonSerializer.Serialize(data, options);
-
-        var message = new ServiceBusMessage(json)
+        var message = new ServiceBusMessage(data.ToJson())
         {
             ContentType = "application/json",
             CorrelationId = data.ContractId.ToString(),
             MessageId = Guid.NewGuid().ToString(),
-            Subject = "Test", // Improve This
+            Subject = $"{data.ContractId} ({data.WebHookKind})",
             TimeToLive = TimeSpan.FromHours(ttlHours)
         };
 
