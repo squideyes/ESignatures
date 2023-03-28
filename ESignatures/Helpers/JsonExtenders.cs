@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SharedModels;
+namespace ESignatures;
 
 public static class JsonExtenders
 {

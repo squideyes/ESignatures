@@ -1,6 +1,6 @@
 ﻿using SquidEyes.Basics;
 
-namespace SharedModels;
+namespace ESignatures;
 
 public class Metadata
 {
@@ -10,7 +10,7 @@ public class Metadata
 
     public ClientId ClientId { get; private set; }
     public ShortId TrackingId { get; private set; }
-    public ContractKind ContractKind { get; private set; }
+    public KnownAs KnownAs { get; private set; }
 
     public static Metadata Parse(string value)
     {
@@ -34,8 +34,8 @@ public class Metadata
                 case nameof(TrackingId):
                     metadata.TrackingId = ShortId.From(fields[1]);
                     break;
-                case nameof(ContractKind):
-                    metadata.ContractKind = Enum.Parse<ContractKind>(fields[1]);
+                case nameof(KnownAs):
+                    metadata.KnownAs = Enum.Parse<KnownAs>(fields[1]);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(value));

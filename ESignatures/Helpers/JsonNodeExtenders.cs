@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace SharedModels;
+namespace ESignatures;
 
 public static class JsonNodeExtenders
 {
@@ -31,7 +31,7 @@ public static class JsonNodeExtenders
             signers.Add(new Signer()
             {
                 SignerId = Guid.Parse(s.GetString("id")),
-                Name = s.GetString("name"),
+                FullName = s.GetString("name"),
                 Email = s.GetString("email"),
                 Mobile = s.GetString("mobile"),
             });

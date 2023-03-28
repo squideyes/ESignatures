@@ -1,4 +1,4 @@
-﻿namespace SharedModels;
+﻿namespace ESignatures;
 
 public class SignerViewed : IWebHook<SignerViewed>, IBasicWebHook
 {

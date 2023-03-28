@@ -1,4 +1,4 @@
-﻿namespace SharedModels;
+﻿namespace ESignatures;
 
 public class ContractSent : IWebHook<ContractSent>, IBasicWebHook
 {

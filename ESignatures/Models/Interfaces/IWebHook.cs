@@ -1,4 +1,4 @@
-﻿namespace SharedModels;
+﻿namespace ESignatures;
 
 public interface IWebHook<T>
     where T : new()

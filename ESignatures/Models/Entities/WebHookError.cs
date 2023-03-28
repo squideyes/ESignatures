@@ -1,4 +1,4 @@
-﻿namespace SharedModels;
+﻿namespace ESignatures;
 
 public class WebHookError : IWebHook<WebHookError>
 {

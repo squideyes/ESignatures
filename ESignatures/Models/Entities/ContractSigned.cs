@@ -1,4 +1,4 @@
-﻿namespace SharedModels;
+﻿namespace ESignatures;
 
 public class ContractSigned : IWebHook<ContractSigned>
 {
@@ -19,7 +19,7 @@ public class ContractSigned : IWebHook<ContractSigned>
             { "ClientId", Metadata!.ClientId.ToString() },
             { "TrackingId", Metadata!.TrackingId.ToString() },
             { "Signers", Signers.ToJson() },
-            { "ContractKind", Metadata!.ContractKind.ToString() }
+            { "ContractKind", Metadata!.KnownAs.ToString() }
         };
     }
 }
