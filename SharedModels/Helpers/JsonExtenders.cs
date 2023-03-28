@@ -6,7 +6,7 @@ namespace SharedModels;
 
 public static class JsonExtenders
 {
-    private static JsonSerializerOptions options;
+    private static readonly JsonSerializerOptions options;
 
     static JsonExtenders()
     {
@@ -23,7 +23,4 @@ public static class JsonExtenders
 
     public static string ToJson(this object? value) =>
         JsonSerializer.Serialize(value, options);
-
-    public static T FromJson<T>(this string value) =>
-        JsonSerializer.Deserialize<T>(value, options)!;
 }

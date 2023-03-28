@@ -1,11 +1,10 @@
-﻿using SharedModels;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace WebHookProcessor;
+namespace SharedModels;
 
-internal static class JsonNodeExtenders
+public static class JsonNodeExtenders
 {
     public static ContractSent ParseContractSent(this JsonNode? node) =>
         ParseContractSigner<ContractSent>(node, "contract-sent-to-signer");
@@ -131,6 +130,22 @@ internal static class JsonNodeExtenders
         };
     }
 
+    public static WebHookKind GetWebHoodKind(JsonNode? node)
+    {
+        return node.GetString("status") switch
+        {
+            "contract-sent-to-signer" => WebHookKind.ContractSent,
+            "contract-signed" => WebHookKind.ContractSigned,
+            "contract-withdrawn" => WebHookKind.ContractWithdrawn,
+            "signer-mobile-update-request" => WebHookKind.MobileUpdate,
+            "signer-declined" => WebHookKind.SignerDeclined,
+            "signer-signed" => WebHookKind.SignerSigned,
+            "signer-viewed-the-contract" => WebHookKind.SignerViewed,
+            "error" => WebHookKind.WebHookError,
+            _ => throw new ArgumentOutOfRangeException(nameof(node)),
+        };
+    }
+
     private static T ParseContractSigner<T>(JsonNode? node, string status)
         where T : IBasicWebHook, new()
     {
@@ -151,6 +166,43 @@ internal static class JsonNodeExtenders
                 Mobile = signer.GetString("mobile")
             },
             Metadata = Metadata.Parse(contract.GetString("metadata"))
+        };
+    }
+
+    private static JsonNode? GetDataIfStatusIs(this JsonNode? node, string status)
+    {
+        var actual = node.GetString("status");
+
+        if (actual != status)
+        {
+            throw new InvalidDataException(
+                $"\"{actual}\" JSON received when \"{status}\" was expected!");
+        }
+
+        return node!["data"];
+    }
+
+    private static string GetString(this JsonNode? node, string propertyName) =>
+        (string)node![propertyName]!;
+
+    private static SignerEventKind ToSignerEventKind(this string value)
+    {
+        return value switch
+        {
+            "contract_viewed" => SignerEventKind.ContractViewed,
+            "disable_reminders" => SignerEventKind.DisableReminders,
+            "email_contract_sent" => SignerEventKind.EmailContractSent,
+            "email_delivery_failed" => SignerEventKind.EmailDeliveryFailed,
+            "email_final_contract_sent" => SignerEventKind.EmailFinalContractSent,
+            "email_spam_complaint" => SignerEventKind.EmailSpamComplaint,
+            "mobile_update_request" => SignerEventKind.MobileUpdateRequest,
+            "reminder_emailed" => SignerEventKind.ReminderEmailed,
+            "sign_contract" => SignerEventKind.SignContract,
+            "signature_declined" => SignerEventKind.SignatureDeclined,
+            "sms_contract_sent" => SignerEventKind.SmsContractSent,
+            "sms_delivery_failed" => SignerEventKind.SmsDeliveryFailed,
+            "sms_final_contract_sent" => SignerEventKind.SmsFinalContractSent,
+            _ => throw new ArgumentOutOfRangeException(nameof(value))
         };
     }
 }

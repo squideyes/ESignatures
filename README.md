@@ -1,4 +1,11 @@
-**ESignatures** is a "fluent" C# client for the <a href="https://esignatures.io/" target="_blank">eSigntures.io</a> contract-signing web-service, open-sourced on <a href="https://github.com/squideyes/ESignatures" target="_blank">GitHub</a> (under an **MIT license**; see License.md for details) and available as a Nuget. The client is meant to be paired with a custom web-hook processor like the included **WebHookDemo**. A small bit of C# code (**ContractSenderDemo**) will also be needed to "kickoff" the contract-signing process.
+**ESignatures** is a "fluent" C# client for the <a href="https://esignatures.io/" target="_blank">eSigntures.io</a> contract-signing web-service, open-sourced on <a href="https://github.com/squideyes/ESignatures" target="_blank">GitHub</a> (under an **MIT license**; see License.md for details) and available as a NuGet. 
+
+The client is meant to be paired with a custom web-hook-processor like the included **WebHookProcessor**.
+
+
+
+A small bit of C# code (**ContractSender**) will also be needed to "kickoff" the contract-signing process and then you'd typically monitor the resulting Azure Service Bus messages with a program like **MessageProcessor**.
+
 
 To use the demos you'll need to signup for a demo <a href="https://esignatures.io/" target="_blank">eSignatures.io</a> account.  Once the account is created, you'll then need to do the following:
 

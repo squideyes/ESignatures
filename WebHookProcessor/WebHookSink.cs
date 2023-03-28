@@ -65,35 +65,35 @@ public class WebHookSink
             await serviceBus.SendAsync(getWebHook(node!), cancellationToken);
         }
 
-        switch (node.GetString("status"))
-        {
-            case "contract-sent-to-signer":
-                await SendAsync(n => n!.ParseContractSent());
-                break;
-            case "contract-signed":
-                await SendAsync(n => n!.ParseContractSigned());
-                break;
-            case "contract-withdrawn":
-                await SendAsync(n => n!.ParseContractWithdrawn());
-                break;
-            case "signer-mobile-update-request":
-                await SendAsync(n => n!.ParseMobileUpdate());
-                break;
-            case "signer-declined":
-                await SendAsync(n => n!.ParseSignerDeclined());
-                break;
-            case "signer-signed":
-                await SendAsync(n => n!.ParseSignerSigned());
-                break;
-            case "signer-viewed-the-contract":
-                await SendAsync(n => n!.ParseSignerViewed());
-                break;
-            case "error":
-                await SendAsync(n => n!.ParseWebHookError());
-                break;
-            default:
-                throw new ArgumentOutOfRangeException("status");
-        }
+        //switch (node.GetString("status"))
+        //{
+        //    case "contract-sent-to-signer":
+        //        await SendAsync(n => n!.ParseContractSent());
+        //        break;
+        //    case "contract-signed":
+        //        await SendAsync(n => n!.ParseContractSigned());
+        //        break;
+        //    case "contract-withdrawn":
+        //        await SendAsync(n => n!.ParseContractWithdrawn());
+        //        break;
+        //    case "signer-mobile-update-request":
+        //        await SendAsync(n => n!.ParseMobileUpdate());
+        //        break;
+        //    case "signer-declined":
+        //        await SendAsync(n => n!.ParseSignerDeclined());
+        //        break;
+        //    case "signer-signed":
+        //        await SendAsync(n => n!.ParseSignerSigned());
+        //        break;
+        //    case "signer-viewed-the-contract":
+        //        await SendAsync(n => n!.ParseSignerViewed());
+        //        break;
+        //    case "error":
+        //        await SendAsync(n => n!.ParseWebHookError());
+        //        break;
+        //    default:
+        //        throw new ArgumentOutOfRangeException("status");
+        //}
     }
 
     [Function("ReceiveWebHook")]
