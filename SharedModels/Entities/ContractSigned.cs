@@ -7,7 +7,7 @@ public class ContractSigned : IWebHook<ContractSigned>
     public Uri? PdfUri { get; init; }
     public Signer[]? Signers { get; init; }
 
-    public WebHookKind Kind => WebHookKind.ContractSigned;
+    public WebHookKind WebHookKind => WebHookKind.ContractSigned;
 
     public string GetBlobName() => $"Signed/{ContractId:N}.json";
 

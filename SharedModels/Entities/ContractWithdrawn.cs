@@ -6,5 +6,5 @@ public class ContractWithdrawn : IWebHook<ContractWithdrawn>
     public Metadata? Metadata { get; set; }
     public Signer[]? Signers { get; set; }
 
-    public WebHookKind Kind => WebHookKind.ContractWithdrawn;
+    public WebHookKind WebHookKind => WebHookKind.ContractWithdrawn;
 }

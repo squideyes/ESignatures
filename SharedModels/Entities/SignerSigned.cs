@@ -1,10 +1,10 @@
 ﻿namespace SharedModels;
 
-public class SignerSigned : IWebHook<SignerSigned>, IContractSigner
+public class SignerSigned : IWebHook<SignerSigned>, IBasicWebHook
 {
     public Guid ContractId { get; set; }
     public Metadata? Metadata { get; set; }
     public Signer? Signer { get; set; }
 
-    public WebHookKind Kind => WebHookKind.SignerSigned;
+    public WebHookKind WebHookKind => WebHookKind.SignerSigned;
 }

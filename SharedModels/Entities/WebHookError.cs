@@ -7,5 +7,5 @@ public class WebHookError : IWebHook<WebHookError>
     public string? ErrorCode { get; set; }
     public string? Message { get; set; }
 
-    public WebHookKind Kind => WebHookKind.WebHookError;
+    public WebHookKind WebHookKind => WebHookKind.WebHookError;
 }

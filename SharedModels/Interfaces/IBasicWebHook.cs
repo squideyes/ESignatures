@@ -1,6 +1,6 @@
 ﻿namespace SharedModels;
 
-public interface IContractSigner
+public interface IBasicWebHook
 {
     Guid ContractId { get; set; }
     Metadata? Metadata { get; set; }

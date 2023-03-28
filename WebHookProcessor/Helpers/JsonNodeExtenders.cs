@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 
 namespace WebHookProcessor;
 
-internal static class WebHookParser
+internal static class JsonNodeExtenders
 {
     public static ContractSent ParseContractSent(this JsonNode? node) =>
         ParseContractSigner<ContractSent>(node, "contract-sent-to-signer");
@@ -19,7 +19,7 @@ internal static class WebHookParser
     public static SignerDeclined ParseSignerDeclined(this JsonNode? node) =>
         ParseContractSigner<SignerDeclined>(node, "signer-declined");
 
-    public static ContractWithdrawn ParseContractWithdrawn(JsonNode? node)
+    public static ContractWithdrawn ParseContractWithdrawn(this JsonNode? node)
     {
         var data = node.GetDataIfStatusIs("contract-withdrawn");
 
@@ -46,7 +46,7 @@ internal static class WebHookParser
         };
     }
 
-    public static MobileUpdate ParseMobileUpdate(JsonNode? node)
+    public static MobileUpdate ParseMobileUpdate(this JsonNode? node)
     {
         var data = node.GetDataIfStatusIs("signer-mobile-update-request");
 
@@ -69,7 +69,7 @@ internal static class WebHookParser
         };
     }
     
-    public static WebHookError ParseWebHookError(JsonNode? node)
+    public static WebHookError ParseWebHookError(this JsonNode? node)
     {
         var data = node.GetDataIfStatusIs("error");
 
@@ -82,7 +82,7 @@ internal static class WebHookParser
         };
     }
 
-    public static ContractSigned ParseContractSigned(JsonNode? node)
+    public static ContractSigned ParseContractSigned(this JsonNode? node)
     {
         var data = node.GetDataIfStatusIs("contract-signed");
 
@@ -132,7 +132,7 @@ internal static class WebHookParser
     }
 
     private static T ParseContractSigner<T>(JsonNode? node, string status)
-        where T : IContractSigner, new()
+        where T : IBasicWebHook, new()
     {
         var data = node.GetDataIfStatusIs(status);
 

@@ -7,5 +7,5 @@ public class MobileUpdate : IWebHook<MobileUpdate>
     public Signer? Signer { get; set; }
     public string? NewMobile { get; set; }
 
-    public WebHookKind Kind => WebHookKind.MobileUpdate;
+    public WebHookKind WebHookKind => WebHookKind.MobileUpdate;
 }
