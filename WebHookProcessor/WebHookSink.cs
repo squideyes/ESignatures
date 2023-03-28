@@ -38,7 +38,8 @@ public class WebHookSink
     }
 
     [Function("ContractSigned")]
-    public void ContractSignedAsync([QueueTrigger("")] ContractSigned contractSigned)
+    public void ContractSignedAsync(
+        [QueueTrigger("")] ContractSigned contractSigned)
     {
     }
 
