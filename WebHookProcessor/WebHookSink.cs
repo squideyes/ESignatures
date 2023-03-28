@@ -13,9 +13,11 @@ namespace WebHookProcessor;
 
 public class WebHookSink
 {
-    public class Result
+    private const string WEBHOOK_RECEIVED = "webhook-received";
+
+    public class ReceiveWebHookResult
     {
-        public Result(HttpRequestData request, 
+        public ReceiveWebHookResult(HttpRequestData request,
             HttpStatusCode statusCode, string message, string json = null!)
         {
             Response = request.GetResponse(statusCode, message);
@@ -24,7 +26,7 @@ public class WebHookSink
 
         public HttpResponseData Response { get; }
 
-        [QueueOutput(Known.QueueNames.WebHookReceived)]
+        [QueueOutput(WEBHOOK_RECEIVED)]
         public string Json { get; }
     }
 
@@ -52,189 +54,80 @@ public class WebHookSink
 
     [Function("ProcessWebHook")]
     public async Task ProcessWebHookAsync(
-        [QueueTrigger(Known.QueueNames.WebHookReceived)] string json,
+        [QueueTrigger(WEBHOOK_RECEIVED)] string json,
         CancellationToken cancellationToken)
     {
         var node = JsonNode.Parse(json!);
 
-        var kind = node.GetString("status") switch
+        async Task SendAsync<T>(Func<JsonNode?, T> getWebHook)
+            where T : IWebHook<T>, new()
         {
-            "contract-sent-to-signer" => WebHookKind.ContractSent,
-            "signer-viewed-the-contract" => WebHookKind.SignerViewed,
-            "signer-signed" => WebHookKind.SignerSigned,
-            "signer-declined" => WebHookKind.SignerDeclined,
-            "contract-signed" => WebHookKind.ContractSigned,
-            "contract-withdrawn" => WebHookKind.ContractWithdrawn,
-            "signer-mobile-update-request" => WebHookKind.MobileUpdate,
-            "error" => WebHookKind.WebHookError,
-            _ => throw new ArgumentOutOfRangeException("status")
-        };
+            await serviceBus.SendAsync(getWebHook(node!), cancellationToken);
+        }
 
-        switch (kind)
+        switch (node.GetString("status"))
         {
-            case WebHookKind.ContractSent:
-                var contractSent = node!.ParseContractSent();
-                await serviceBus.SendAsync(contractSent, cancellationToken);
+            case "contract-sent-to-signer":
+                await SendAsync(n => n!.ParseContractSent());
                 break;
-            case WebHookKind.ContractSigned:
-                var contractSigned = node!.ParseContractSigned();
-                //await queue.SendMessageAsync(contractSigned.ToJson());
-                await serviceBus.SendAsync(contractSigned, cancellationToken);
+            case "contract-signed":
+                await SendAsync(n => n!.ParseContractSigned());
                 break;
-            case WebHookKind.ContractWithdrawn:
-                var contractWithdrawn = node!.ParseContractWithdrawn();
-                await serviceBus.SendAsync(contractWithdrawn, cancellationToken);
+            case "contract-withdrawn":
+                await SendAsync(n => n!.ParseContractWithdrawn());
                 break;
-            case WebHookKind.MobileUpdate:
-                var mobileUpdate = node!.ParseMobileUpdate();
-                await serviceBus.SendAsync(mobileUpdate, cancellationToken);
+            case "signer-mobile-update-request":
+                await SendAsync(n => n!.ParseMobileUpdate());
                 break;
-            case WebHookKind.SignerDeclined:
-                var signerDeclined = node!.ParseSignerDeclined();
-                await serviceBus.SendAsync(signerDeclined, cancellationToken);
+            case "signer-declined":
+                await SendAsync(n => n!.ParseSignerDeclined());
                 break;
-            case WebHookKind.SignerSigned:
-                var signerSigned = node!.ParseSignerSigned();
-                await serviceBus.SendAsync(signerSigned, cancellationToken);
+            case "signer-signed":
+                await SendAsync(n => n!.ParseSignerSigned());
                 break;
-            case WebHookKind.SignerViewed:
-                var signerViewed = node!.ParseSignerViewed();
-                await serviceBus.SendAsync(signerViewed, cancellationToken);
+            case "signer-viewed-the-contract":
+                await SendAsync(n => n!.ParseSignerViewed());
                 break;
-            case WebHookKind.WebHookError:
-                var webHookError = node!.ParseWebHookError();
-                await serviceBus.SendAsync(webHookError, cancellationToken);
+            case "error":
+                await SendAsync(n => n!.ParseWebHookError());
                 break;
+            default:
+                throw new ArgumentOutOfRangeException("status");
         }
     }
 
     [Function("ReceiveWebHook")]
-    public Result ReceiveWebHookAsync([HttpTrigger(
+    public ReceiveWebHookResult ReceiveWebHookAsync([HttpTrigger(
         Function, "post", Route = "WebHook")] HttpRequestData request)
     {
         if (!request.Headers.TryGetValues("Authorization", out var headers))
-            return new Result(request, Forbidden, "No Authorization Header");
+        {
+            return new ReceiveWebHookResult(
+                request, Forbidden, "No Authorization Header");
+        }
 
         var authHeader = headers.First();
 
         if (!authHeader.StartsWith("Basic "))
-            return new Result(request, Forbidden, "No Basic-Auth Token!");
+        {
+            return new ReceiveWebHookResult(
+                request, Forbidden, "No Basic-Auth Token!");
+        }
 
         var apiKey = authHeader[6..].DecodeBase64()[0..^1];
 
-        if (!Guid.TryParse(apiKey, out Guid guid) || this.apiKey != guid)
-            return new Result(request, Forbidden, "Bad Basic-Auth Token!");
+        if (!Guid.TryParse(
+            apiKey, out Guid guid) || this.apiKey != guid)
+        {
+            return new ReceiveWebHookResult(
+                request, Forbidden, "Bad Basic-Auth Token!");
+        }
 
         var json = request.ReadAsString();
 
         logger.LogDebug($"WebHook-Data: {json}");
 
-        return new Result(request, OK, "WebHook-Data Received!", json!);
+        return new ReceiveWebHookResult(
+            request, OK, "WebHook-Data Received!", json!);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    //[Function("ContractSigned")]
-    //public void ContractSignedAsync(
-    //    [QueueTrigger("")] ContractSigned contractSigned)
-    //{
-    //}
-
-    //[Function("WebHook")]
-    //public async Task<HttpResponseData> WebHookAsync([HttpTrigger(Function, "post")]
-    //    HttpRequestData request, CancellationToken cancellationToken)
-    //{
-    //    HttpResponseData GetResponse(HttpStatusCode statusCode, string message)
-    //    {
-    //        var response = request.CreateResponse(statusCode);
-
-    //        response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-
-    //        response.WriteString(message);
-
-    //        return response;
-    //    }
-
-    //    if (!request.Headers.TryGetValues("Authorization", out var authHeader))
-    //        return GetResponse(Forbidden, "No Authorization Header!");
-
-    //    // handle bad authHeader
-
-    //    var json = await request.ReadAsStringAsync();
-
-    //    logger.LogDebug($"Raw WebHook: {json}");
-
-    //    var node = JsonNode.Parse(json!);
-
-    //    var kind = node.GetString("status") switch
-    //    {
-    //        "contract-sent-to-signer" => WebHookKind.ContractSent,
-    //        "signer-viewed-the-contract" => WebHookKind.SignerViewed,
-    //        "signer-signed" => WebHookKind.SignerSigned,
-    //        "signer-declined" => WebHookKind.SignerDeclined,
-    //        "contract-signed" => WebHookKind.ContractSigned,
-    //        "contract-withdrawn" => WebHookKind.ContractWithdrawn,
-    //        "signer-mobile-update-request" => WebHookKind.MobileUpdate,
-    //        "error" => WebHookKind.WebHookError,
-    //        _ => (WebHookKind?)null!
-    //    };
-
-    //    if (!kind.HasValue)
-    //        return GetResponse(BadRequest, "Invalid \"Status\" Value");
-
-    //    switch (kind)
-    //    {
-    //        case WebHookKind.ContractSent:
-    //            var contractSent = node!.ParseContractSent();
-    //            await serviceBus.SendAsync(contractSent, cancellationToken);
-    //            break;
-    //        case WebHookKind.ContractSigned:
-    //            var contractSigned = node!.ParseContractSigned();
-    //            await queue.SendMessageAsync(contractSigned.ToJson());
-    //            await serviceBus.SendAsync(contractSigned, cancellationToken);
-    //            break;
-    //        case WebHookKind.ContractWithdrawn:
-    //            var contractWithdrawn = node!.ParseContractWithdrawn();
-    //            await serviceBus.SendAsync(contractWithdrawn, cancellationToken);
-    //            break;
-    //        case WebHookKind.MobileUpdate:
-    //            var mobileUpdate = node!.ParseMobileUpdate();
-    //            await serviceBus.SendAsync(mobileUpdate, cancellationToken);
-    //            break; 
-    //        case WebHookKind.SignerDeclined:
-    //            var signerDeclined = node!.ParseSignerDeclined();
-    //            await serviceBus.SendAsync(signerDeclined, cancellationToken);
-    //            break;
-    //        case WebHookKind.SignerSigned:
-    //            var signerSigned = node!.ParseSignerSigned();
-    //            await serviceBus.SendAsync(signerSigned, cancellationToken);
-    //            break;
-    //        case WebHookKind.SignerViewed:
-    //            var signerViewed = node!.ParseSignerViewed();
-    //            await serviceBus.SendAsync(signerViewed, cancellationToken);
-    //            break;
-    //        case WebHookKind.WebHookError:
-    //            var webHookError = node!.ParseWebHookError();
-    //            await serviceBus.SendAsync(webHookError, cancellationToken);
-    //            break;
-    //    }
-
-    //    return GetResponse(OK, "Received");
-    //}
 }
