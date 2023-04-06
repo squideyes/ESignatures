@@ -1,6 +1,5 @@
 ﻿using FluentValidation;
-using SquidEyes.Basics;
-using static ESignatures.EmailValidator;
+using SquidEyes.Fundamentals;
 
 namespace ESignatures;
 
@@ -15,16 +14,13 @@ public class Signer
                 .WithMessage("'FullName' must be non-empty and trimmed.");
 
             RuleFor(x => x.Nickname)
-                .Must(v => v!.IsToken())
-                .WithMessage("'Nickname' must be an alpha-numeric token.");
+                .NotEmpty();
 
             RuleFor(x => x.Email)
-                .Must(IsEmailAddress)
-                .WithMessage("'Email' must be a valid email adddress.");
+                .NotEmpty();
 
             RuleFor(x => x.Mobile)
-                .Must(v => v.IsPhoneNumber())
-                .WithMessage("'Mobile' must be a valid mobile phone number.");
+                .NotEmpty();
 
             RuleFor(x => x.Company)
                 .Must(v => v!.IsNonEmptyAndTrimmed())
@@ -34,13 +30,13 @@ public class Signer
     }
 
     public required string FullName { get; init; }
-    public required string Nickname { get; init; }
-    public required string Email { get; init; }
-    public required string Mobile { get; init; }
+    public required Token Nickname { get; init; }
+    public required Email Email { get; init; }
+    public required Phone Mobile { get; init; }
     public string? Company { get; init; }
 
     public Guid? SignerId { get; set; }
 
     public string GetSha256Hash() => CryptoHelper.GetHash(
-        FullName, Email, Mobile.ToPlusAndDigits());
+        FullName, Email.ToString(), Mobile.Formatted(PhoneFormat.E164));
 }

@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SquidEyes.Basics" Version="1.2.4" />
+    <PackageReference Include="SquidEyes.Fundamentals" Version="1.3.2" />
   </ItemGroup>
 
 </Project>

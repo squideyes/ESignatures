@@ -15,11 +15,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="7.0.0" />
     <PackageReference Include="OneOf" Version="3.0.243" />
-    <PackageReference Include="SquidEyes.Basics" Version="1.2.4" />
+    <PackageReference Include="SquidEyes.Fundamentals" Version="1.3.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ESignatures\ESignatures.csproj" />
+    <ProjectReference Include="..\SharedModels\SharedModels.csproj" />
   </ItemGroup>
 
 </Project>

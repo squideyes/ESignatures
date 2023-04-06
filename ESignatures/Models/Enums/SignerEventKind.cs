@@ -1,19 +1,18 @@
-﻿namespace ESignatures
+﻿namespace ESignatures;
+
+public enum SignerEventKind
 {
-    public enum SignerEventKind
-    {
-        ContractViewed = 1,
-        DisableReminders,
-        EmailContractSent,
-        EmailDeliveryFailed,
-        EmailFinalContractSent,
-        EmailSpamComplaint,
-        MobileUpdateRequest,
-        ReminderEmailed,
-        SignContract,
-        SignatureDeclined,
-        SmsContractSent,
-        SmsDeliveryFailed,
-        SmsFinalContractSent
-    }
+    ContractViewed = 1,
+    DisableReminders,
+    EmailContractSent,
+    EmailDeliveryFailed,
+    EmailFinalContractSent,
+    EmailSpamComplaint,
+    MobileUpdateRequest,
+    ReminderEmailed,
+    SignContract,
+    SignatureDeclined,
+    SmsContractSent,
+    SmsDeliveryFailed,
+    SmsFinalContractSent
 }

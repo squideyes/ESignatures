@@ -1,6 +1,6 @@
-﻿using OneOf;
-using SquidEyes.Basics;
-using ESignatures.Internal;
+﻿using ESignatures.Internal;
+using OneOf;
+using SquidEyes.Fundamentals;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Encodings.Web;
@@ -9,47 +9,54 @@ using System.Text.Json.Serialization;
 
 namespace ESignatures;
 
-public class ContractSender
+public class ContractSender<M>
+    where M : class
 {
-    private static readonly Signer.Validator signerValidator = new();
-    private static readonly Handling.Validator signingPlanValidator = new();
-    private static readonly Address.Validator addressValidator = new();
-
     public record Accepted(Guid ContractId, Signer[] Signers);
     public record Rejected(HttpStatusCode StatusCode, string ReasonPhrase);
     public record Failed(Exception Error);
     public record Cancelled();
+    public record EmailSpec(string Subject, string Body);
 
     private static readonly HttpClient client = new();
+    private static readonly Signer.Validator signerValidator = new();
+    private static readonly Handling.Validator signingPlanValidator = new();
+    private static readonly Address.Validator addressValidator = new();
 
-    private readonly Uri contractsUri;
-    private readonly Guid templateId;
-
-    private readonly Dictionary<string, string> metadata = new();
     private readonly Dictionary<string, SignerInfo> signerInfos = new();
     private readonly Dictionary<string, string> placeholders = new();
+    private readonly HashSet<Email> ccEmails = new();
+    private readonly Dictionary<EmailKind, EmailSpec> emailSpecs = new();
 
+    private readonly Uri contractsUri;
+
+    private Guid templateId = default;
+    private Email replyTo = default;
+    private M metadata = null!;
     private Uri webHookUri = null!;
     private bool isTest = false;
     private Locale locale = Locale.EN;
-    private int expiryInHours = 48;
+    private int expiryHours = 48;
     private string? title = null!;
 
-    public ContractSender(Guid authToken, Guid templateId)
+    public ContractSender(Guid authToken)
     {
-        if (authToken == Guid.Empty)
-            throw new ArgumentOutOfRangeException(nameof(authToken));
-
-        if (templateId == Guid.Empty)
-            throw new ArgumentOutOfRangeException(nameof(templateId));
-
-        this.templateId = templateId;
+        authToken.MayNot().BeDefault();
 
         contractsUri = new Uri(
             $"https://esignatures.io/api/contracts?token={authToken}");
     }
 
-    public ContractSender WithTitle(string title)
+    public ContractSender<M> WithTemplate(Guid templateId)
+    {
+        templateId.MayNot().BeDefault();
+
+        this.templateId = templateId;
+
+        return this;
+    }
+
+    public ContractSender<M> WithTitle(string title)
     {
         if (title is not null && string.IsNullOrWhiteSpace(title))
             throw new ArgumentOutOfRangeException(nameof(title));
@@ -59,7 +66,7 @@ public class ContractSender
         return this;
     }
 
-    public ContractSender WithWebHook(Uri uri)
+    public ContractSender<M> WithWebHook(Uri uri)
     {
         if (!uri.IsAbsoluteUri)
             throw new ArgumentOutOfRangeException(nameof(uri));
@@ -69,17 +76,16 @@ public class ContractSender
         return this;
     }
 
-    public ContractSender WithExpiryInHours(int hours)
+    public ContractSender<M> WithExpiryHours(int hours)
     {
-        if (expiryInHours < 1 || expiryInHours > 168)
-            throw new ArgumentOutOfRangeException(nameof(expiryInHours));
+        expiryHours.Must().BeBetween(1, 168);
 
-        expiryInHours = hours;
+        expiryHours = hours;
 
         return this;
     }
 
-    public ContractSender WithLocale(Locale locale)
+    public ContractSender<M> WithLocale(Locale locale)
     {
         if (locale == default)
             throw new ArgumentNullException(nameof(locale));
@@ -89,66 +95,46 @@ public class ContractSender
         return this;
     }
 
-    public ContractSender WithMetadata<T>(string token, T value)
+    public ContractSender<M> WithMetadata(M value)
     {
-        if (!token.IsToken())
-            throw new ArgumentOutOfRangeException(nameof(token));
-
-        switch (value)
-        {
-            case bool _:
-            case ClientId _:
-            case DateOnly _:
-            case DateTime _:
-            case double _:
-            case Enum _:
-            case float _:
-            case Guid _:
-            case int _:
-            case long _:
-            case string _:
-            case ShortId _:
-            case TimeOnly _:
-            case TimeSpan _:
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value));
-        };
-
-        metadata.Add(token, value.ToString()!);
+        metadata = value.MayNot().BeNull();
 
         return this;
     }
 
-    public ContractSender AsTest()
+    public ContractSender<M> AsTest()
     {
         isTest = true;
 
         return this;
     }
 
-    public ContractSender WithDayMonthYear(DateOnly date)
+    public ContractSender<M> WithPubDate(DateOnly pubDate = default)
     {
-        placeholders.Add("day", date.ToDayName());
-        placeholders.Add("month", date.ToMonthName());
-        placeholders.Add("year", date.Year.ToString());
+        if (pubDate == default)
+            pubDate = DateOnly.FromDateTime(DateTime.Today);
+
+        placeholders["pub-date"] = pubDate.ToString("MM/dd/yyyy");
+        placeholders["pub-day"] = pubDate.ToDayName();
+        placeholders["pub-month"] = pubDate.ToMonthName();
+        placeholders["pub-year"] = pubDate.Year.ToString();
 
         return this;
     }
 
-    public ContractSender WithPlaceholder(string key, object value)
+    public ContractSender<M> WithPlaceholder(string key, object value)
     {
         if (!key.IsApiKey())
             throw new ArgumentOutOfRangeException(nameof(key));
 
         ArgumentNullException.ThrowIfNull(value);
 
-        placeholders.Add(key, value.ToString()!);
+        placeholders[key] = value.ToString()!;
 
         return this;
     }
 
-    public ContractSender WithSigner(Signer signer, Handling handling,
+    public ContractSender<M> WithSigner(Signer signer, Handling handling,
         Address? address = null!, bool addPlaceholders = true)
     {
         signerValidator.Validate(signer);
@@ -169,21 +155,56 @@ public class ContractSender
                 { "address2", address!.Address2! },
                 { "company", signer.Company! },
                 { "country", address!.Country! },
-                { "email", signer.Email! },
+                { "email", signer.Email!.ToString() },
                 { "locality", address!.Locality! },
-                { "mobile", signer.Mobile! },
-                { "nickname", signer.Nickname! },
+                { "mobile", signer.Mobile!.ToString() },
+                { "nickname", signer.Nickname!.ToString() },
                 { "name", signer.FullName! },
                 { "one-line-address", address!.GetOneLineAddress() },
                 { "postal-code", address!.PostalCode! },
                 { "region", address!.Region! }
             };
 
-            var prefix = signer.Nickname.ToLower() + "-";
+            var prefix = signer.Nickname.ToString().ToLower() + "-";
 
             foreach (var key in dict.Keys)
-                WithPlaceholder(prefix + "+" + key, dict[key]);
+                WithPlaceholder(prefix + key, dict[key]);
         }
+
+        return this;
+    }
+
+    public ContractSender<M> WithCcEmail(string email) =>
+        WithCcPdfsTo(Email.From(email));
+
+    public ContractSender<M> WithCcPdfsTo(Email email)
+    {
+        email.MayNot().BeDefault();
+
+        ccEmails.Add(email);
+
+        return this;
+    }
+
+    public ContractSender<M> WithReplyTo(string email) =>
+        WithReplyTo(Email.From(email));
+
+    public ContractSender<M> WithReplyTo(Email email)
+    {
+        email.MayNot().BeDefault();
+
+        replyTo = email;
+
+        return this;
+    }
+
+    public ContractSender<M> WithEmailSpec(
+        EmailKind emailKind, EmailSpec emailSpec)
+    {
+        emailKind.Must().BeEnumValue();
+        emailSpec.MayNot().BeNull();
+
+        emailSpecs[emailKind] = emailSpec;
 
         return this;
     }
@@ -204,8 +225,8 @@ public class ContractSender
         return new SignerData()
         {
             FullName = signer.FullName,
-            Email = signer.Email,
-            Mobile = signer.Mobile.ToPlusAndDigits(),
+            Email = signer.Email.ToString(),
+            Mobile = signer.Mobile.Formatted(PhoneFormat.E164),
             Company = signer.Company!,
             Ordinal = handling.Ordinal,
             GetDocBy = handling.GetDocBy.ToString().ToLower(),
@@ -217,23 +238,35 @@ public class ContractSender
     public async Task<OneOf<Accepted, Rejected, Failed, Cancelled>> SendAsync(
         CancellationToken cancellationToken)
     {
+        static void FailIfNotValid(bool isValid, string message)
+        {
+            if (!isValid)
+                throw new InvalidOperationException(message);
+        }
+
         try
         {
-            if (signerInfos.Count == 0)
-            {
-                throw new InvalidOperationException(
-                    "A contract must have one or more signers!");
-            }
+            FailIfNotValid(!templateId.IsDefault(),
+                "A \"TemplateId\" must be supplied!");
 
-            var metadata = this.metadata.Count == 0 ? null! : string.Join(
-                '|', this.metadata.Select(kv => kv.Key + "=" + kv.Value));
+            FailIfNotValid(!title.IsDefault(),
+                "A \"Title\" must be supplied!");
+
+            FailIfNotValid(webHookUri != null,
+                "A \"WebHook URI\" must be suppplied!");
+
+            FailIfNotValid(placeholders.ContainsKey("pub-date"),
+                "A \"PubDate\" must be supplied!");
+
+            FailIfNotValid(signerInfos.Count > 0,
+                "A contract must have one or more signers!");
 
             var data = new ContractData()
             {
-                ExpireHours = expiryInHours,
+                ExpireHours = expiryHours,
                 IsTest = isTest ? "yes" : "no",
                 Locale = locale.ToCode(),
-                Metadata = metadata,
+                Metadata = metadata.ToString()!,
                 TemplateId = templateId.ToString(),
                 Title = title!,
                 WebHook = webHookUri?.AbsoluteUri!

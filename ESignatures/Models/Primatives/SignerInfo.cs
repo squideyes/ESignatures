@@ -1,4 +1,6 @@
-﻿namespace ESignatures;
+﻿using SquidEyes.Fundamentals;
+
+namespace ESignatures;
 
 public class SignerInfo
 {

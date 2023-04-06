@@ -19,6 +19,6 @@ internal class EmailsData
     [JsonPropertyName("cc_email_addresses")]
     public required string[] CcEmailAddresses { get; init; }
 
-    [JsonPropertyName("cc_email_addresses")]
+    [JsonPropertyName("reply_to")]
     public required string ReplyTo { get; init; }
 }

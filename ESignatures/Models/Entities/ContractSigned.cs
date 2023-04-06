@@ -1,9 +1,10 @@
 ﻿namespace ESignatures;
 
-public class ContractSigned : IWebHook<ContractSigned>
+public class ContractSigned<M> : IWebHook<ContractSigned<M>>
+    where M : class
 {
     public Guid ContractId { get; init; }
-    public Metadata? Metadata { get; init; }
+    public M? Metadata { get; init; }
     public Uri? PdfUri { get; init; }
     public Signer[]? Signers { get; init; }
 
@@ -16,10 +17,10 @@ public class ContractSigned : IWebHook<ContractSigned>
         return new Dictionary<string, string>()
         {
             { "ContractId", ContractId.ToString() },
-            { "ClientId", Metadata!.ClientId.ToString() },
-            { "TrackingId", Metadata!.TrackingId.ToString() },
+            //{ "ClientId", Metadata!["ClientId"] },
+            //{ "TrackingId", Metadata!["TrackingId"] },
             { "Signers", Signers.ToJson() },
-            { "ContractKind", Metadata!.KnownAs.ToString() }
+            //{ "ContractKind", Metadata!["Token"] }
         };
     }
 }

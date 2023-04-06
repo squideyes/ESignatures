@@ -1,9 +1,10 @@
 ﻿namespace ESignatures;
 
-public class WebHookError : IWebHook<WebHookError>
+public class WebHookError<M> : IWebHook<WebHookError<M>>
+    where M : class
 {
     public Guid ContractId { get; set; }
-    public Metadata? Metadata { get; set; }
+    public M? Metadata { get; set; }
     public string? Message { get; set; }
     public string? ErrorCode { get; set; }
 

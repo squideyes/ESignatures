@@ -1,8 +1,9 @@
 ﻿namespace ESignatures;
 
-public interface IBasicWebHook
+public interface IBasicWebHook<M>
+    where M : class
 {
     Guid ContractId { get; set; }
-    Metadata? Metadata { get; set; }
+    M? Metadata { get; set; }
     Signer? Signer { get; set; }
 }

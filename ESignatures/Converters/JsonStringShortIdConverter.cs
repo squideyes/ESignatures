@@ -1,4 +1,4 @@
-﻿using SquidEyes.Basics;
+﻿using SquidEyes.Fundamentals;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
