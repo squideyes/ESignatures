@@ -16,7 +16,7 @@ public class ContractSender<M>
     public record Rejected(HttpStatusCode StatusCode, string ReasonPhrase);
     public record Failed(Exception Error);
     public record Cancelled();
-    public record EmailSpec(string Subject, string Body);
+    public record EmailSpec(string Subject, string BodyText);
 
     private static readonly HttpClient client = new();
     private static readonly Signer.Validator signerValidator = new();
@@ -24,8 +24,8 @@ public class ContractSender<M>
     private static readonly Address.Validator addressValidator = new();
 
     private readonly Dictionary<string, SignerInfo> signerInfos = new();
-    private readonly Dictionary<string, string> placeholders = new();
-    private readonly HashSet<Email> ccEmails = new();
+    private readonly Dictionary<string, string> placeholderDict = new();
+    private readonly HashSet<Email> ccPdfsTo = new();
     private readonly Dictionary<EmailKind, EmailSpec> emailSpecs = new();
 
     private readonly Uri contractsUri;
@@ -114,10 +114,10 @@ public class ContractSender<M>
         if (pubDate == default)
             pubDate = DateOnly.FromDateTime(DateTime.Today);
 
-        placeholders["pub-date"] = pubDate.ToString("MM/dd/yyyy");
-        placeholders["pub-day"] = pubDate.ToDayName();
-        placeholders["pub-month"] = pubDate.ToMonthName();
-        placeholders["pub-year"] = pubDate.Year.ToString();
+        placeholderDict["pub-date"] = pubDate.ToString("MM/dd/yyyy");
+        placeholderDict["pub-day"] = pubDate.ToDayName();
+        placeholderDict["pub-month"] = pubDate.ToMonthName();
+        placeholderDict["pub-year"] = pubDate.Year.ToString();
 
         return this;
     }
@@ -129,7 +129,7 @@ public class ContractSender<M>
 
         ArgumentNullException.ThrowIfNull(value);
 
-        placeholders[key] = value.ToString()!;
+        placeholderDict[key] = value.ToString()!;
 
         return this;
     }
@@ -181,7 +181,7 @@ public class ContractSender<M>
     {
         email.MayNot().BeDefault();
 
-        ccEmails.Add(email);
+        ccPdfsTo.Add(email);
 
         return this;
     }
@@ -255,44 +255,13 @@ public class ContractSender<M>
             FailIfNotValid(webHookUri != null,
                 "A \"WebHook URI\" must be suppplied!");
 
-            FailIfNotValid(placeholders.ContainsKey("pub-date"),
+            FailIfNotValid(placeholderDict.ContainsKey("pub-date"),
                 "A \"PubDate\" must be supplied!");
 
             FailIfNotValid(signerInfos.Count > 0,
                 "A contract must have one or more signers!");
 
-            var data = new ContractData()
-            {
-                ExpireHours = expiryHours,
-                IsTest = isTest ? "yes" : "no",
-                Locale = locale.ToCode(),
-                Metadata = metadata.ToString()!,
-                TemplateId = templateId.ToString(),
-                Title = title!,
-                WebHook = webHookUri?.AbsoluteUri!
-            };
-
-            if (signerInfos.Count > 0)
-            {
-                data.Signers = new List<SignerData>();
-
-                foreach (var signer in signerInfos.Values)
-                    data.Signers.Add(GetSignerData(signer));
-            }
-
-            if (placeholders.Count > 0)
-            {
-                data.Placeholders = new List<Placeholder>();
-
-                foreach (var apiKey in placeholders.Keys)
-                {
-                    data.Placeholders.Add(new Placeholder()
-                    {
-                        ApiKey = apiKey,
-                        Value = placeholders[apiKey]
-                    });
-                }
-            }
+            var data = GetContractData();
 
             var options = new JsonSerializerOptions()
             {
@@ -332,5 +301,73 @@ public class ContractSender<M>
         {
             return new Failed(error);
         }
+    }
+
+    private ContractData GetContractData()
+    {
+        var signerDatas = new List<SignerData>();
+
+        foreach (var signer in signerInfos.Values)
+            signerDatas.Add(GetSignerData(signer));
+
+        List<Placeholder> placeholders = null!;
+
+        if (placeholderDict.Count > 0)
+        {
+            placeholders = new List<Placeholder>();
+
+            foreach (var apiKey in placeholderDict.Keys)
+            {
+                placeholders.Add(new Placeholder()
+                {
+                    ApiKey = apiKey,
+                    Value = placeholderDict[apiKey]
+                });
+            }
+        }
+
+        EmailsData emailsData = null!;
+
+        if (emailSpecs.Count > 0 || replyTo != null || ccPdfsTo.Count > 0)
+        {
+            emailsData = new EmailsData();
+
+            if (emailSpecs.TryGetValue(
+                EmailKind.Request, out EmailSpec? requestSpec))
+            {
+                emailsData.RequestSubject = requestSpec.Subject;
+                emailsData.RequestBodyText = requestSpec.BodyText;
+            }
+
+            if (emailSpecs.TryGetValue(
+                EmailKind.Contract, out EmailSpec? contractSpec))
+            {
+                emailsData.ContractSubject = contractSpec.Subject;
+                emailsData.ContractBodyText = contractSpec.BodyText;
+            }
+
+            if (replyTo != null)
+                emailsData.ReplyTo = replyTo.ToString();
+
+            if (ccPdfsTo.Count > 0)
+            {
+                emailsData.CcPdfsTo = 
+                    ccPdfsTo.Select(v => v.ToString()).ToArray();
+            }
+        }
+
+        return new ContractData()
+        {
+            EmailsData = emailsData,
+            ExpireHours = expiryHours,
+            IsTest = isTest ? "yes" : "no",
+            Locale = locale.ToCode(),
+            Metadata = metadata.ToString()!,
+            Placeholders = placeholders,
+            TemplateId = templateId.ToString(),
+            Title = title!,
+            SignerDatas = signerDatas,
+            WebHook = webHookUri?.AbsoluteUri!
+        };
     }
 }
