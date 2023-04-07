@@ -7,6 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ESignatures", "ESignatures\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{24283B49-5E44-41F5-AB2D-E61D2E05B919}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		CONTRIBUTING.md = CONTRIBUTING.md
+		DEPLOYNOTES.md = DEPLOYNOTES.md
+		Fundamentals.sln.headertext = Fundamentals.sln.headertext
+		global.json = global.json
+		LICENSE.md = LICENSE.md
 		README.md = README.md
 		SampleTemplate.esiot = SampleTemplate.esiot
 	EndProjectSection
@@ -19,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebHookProcessor", "WebHook
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ContractSender", "ContractSender\ContractSender.csproj", "{7887CE3F-9B85-4AB2-BF7A-BCF8CBE54884}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessageProcessor", "MessageProcessor\MessageProcessor.csproj", "{67F06312-30FB-449E-B70B-FC9F88E26021}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MessageProcessor", "MessageProcessor\MessageProcessor.csproj", "{67F06312-30FB-449E-B70B-FC9F88E26021}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,4 +1,9 @@
-﻿using Microsoft.Azure.Functions.Worker.Http;
+// ********************************************************
+// The use of this source code is licensed under the terms
+// of the MIT License (https://opensource.org/licenses/MIT)
+// ********************************************************
+
+using Microsoft.Azure.Functions.Worker.Http;
 using SharedModels;
 using System.Net;
 using System.Text;

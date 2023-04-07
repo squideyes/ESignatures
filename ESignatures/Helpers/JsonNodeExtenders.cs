@@ -1,6 +1,7 @@
-﻿//using System.Net;
-//using System.Text.Json;
-//using System.Text.Json.Nodes;
+// ********************************************************
+// The use of this source code is licensed under the terms
+// of the MIT License (https://opensource.org/licenses/MIT)
+// ********************************************************
 
 //namespace ESignatures;
 

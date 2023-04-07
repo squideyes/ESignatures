@@ -7,14 +7,17 @@ using SquidEyes.Fundamentals;
 
 namespace ESignatures;
 
-public class EmailSpec
+public class SignerPlan
 {
-    public EmailSpec(string subject, string bodyText)
+    public SignerPlan(Signer signer, 
+        Handling handling, Address? address)
     {
-        Subject = subject.Must().Be(v => v.IsNonEmptyAndTrimmed());
-        BodyText = bodyText.MayNot().BeNullOrWhitespace();
+        Signer = signer;
+        Handling = handling;
+        Address = address;
     }
 
-    public string Subject { get; }
-    public string BodyText { get; }
+    public Signer Signer { get; }
+    public Handling Handling { get; }
+    public Address? Address { get; }
 }

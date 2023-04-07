@@ -1,4 +1,9 @@
-﻿using Azure.Messaging.ServiceBus;
+// ********************************************************
+// The use of this source code is licensed under the terms
+// of the MIT License (https://opensource.org/licenses/MIT)
+// ********************************************************
+
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json.Nodes;
 
@@ -61,4 +66,3 @@ Task ErrorHandler(ProcessErrorEventArgs args)
 
     return Task.CompletedTask;
 }
-

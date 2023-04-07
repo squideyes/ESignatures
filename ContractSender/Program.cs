@@ -1,4 +1,9 @@
-﻿using ContractSenderDemo;
+// ********************************************************
+// The use of this source code is licensed under the terms
+// of the MIT License (https://opensource.org/licenses/MIT)
+// ********************************************************
+
+using ContractSenderDemo;
 using ESignatures;
 using Microsoft.Extensions.Configuration;
 using SharedModels;
@@ -7,6 +12,7 @@ using static SharedModels.Nickname;
 
 var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
+    .AddJsonFile("appsettings.json", false, false)
     .AddCommandLine(args)
     .Build();
 
@@ -16,40 +22,43 @@ var cts = new CancellationTokenSource();
 var authToken = Guid.Parse(config["AuthToken"]!);
 
 // Sourced from command-line parameters
+var partnerEmail = Email.From(config["PartnerEmail"]!);
+var partnerMobile = Phone.From(config["PartnerMobile"]!);
+
+// Source from appsettings.json
 var templateId = Guid.Parse(config["TemplateId"]!);
 var baseUri = new Uri(config["BaseUri"]!);
-var company = config["Company"]!;
 var replyTo = config["ReplyTo"]!.ToEmailOrNull();
 var ccPdfsTo = config["CcPdfsTo"]!.ToEmailArrayOrNull();
 var logoUri = config["LogoUri"]!.ToUriOrNull();
-var partnerEmail = Email.From(config["PartnerEmail"]!);
-var partnerMobile = Phone.From(config["PartnerMobile"]!);
 var vendorEmail = Email.From(config["VendorEmail"]!);
 var vendorMobile = Phone.From(config["VendorMobile"]!);
 
 // Generated or known
-var pubDate = DateOnly.FromDateTime(DateTime.Today);
 var metadata = GetMetadata();
+var signDate = DateOnly.FromDateTime(DateTime.Today);
 
 try
 {
-    var p = GetSignerInfo(Partner, partnerEmail, partnerMobile, 0);
-    var v = GetSignerInfo(Vendor, vendorEmail, vendorMobile, 1);
+    var p = GetSignerPlan(Partner, partnerEmail, partnerMobile, 0);
+    var v = GetSignerPlan(Vendor, vendorEmail, vendorMobile, 1);
 
-    var contractInfo = new ContractInfo<Metadata>()
+    var title = $"Marketing Agreement (w/{p.Signer.Company})";
+
+    var contract = new Contract<Metadata>()
     {
         TemplateId = templateId,
         Metadata = metadata,
-        Company = company,
-        Title = $"Marketing Agreement (w/{p.Signer.FullName})",
+        Company = v.Signer.Company!,
+        Title = title,
         ReplyTo = replyTo,
         LogoUri = logoUri!,
-        RequestSpec = GetRequestSpec(),
-        ContractSpec = GetContractSpec(),
+        RequestSpec = GetRequestSpec(title),
+        ContractSpec = GetContractSpec(title),
         WebHookUri = new Uri(baseUri, "/api/WebHook")
     };
 
-    var request = new ContractSender<Metadata>(authToken, contractInfo)
+    var request = new ContractSender<Metadata>(authToken, contract)
         .WithSignerInfo(p.Signer, p.Handling, p.Address)
         .WithSignerInfo(v.Signer, v.Handling, v.Address)
         .WithPlaceholder("client-id", metadata.ClientId)
@@ -64,30 +73,18 @@ catch (Exception error)
     Console.WriteLine("ERROR: " + error.Message);
 }
 
-EmailSpec GetRequestSpec()
+EmailSpec GetRequestSpec(string title)
 {
     return new EmailSpec(
-        "Your document is ready to sign",
-        """
-        Hi __FULL_NAME__, 
-        
-        To review and sign the contract please press the button below.        
-        
-        Kind Regards.
-        """);
+        $"Your \"{title}\" is READY-TO-SIGN",
+        $"To review and sign the \"{title}\", please press the \"View and Sign\" button, below.");
 }
 
-EmailSpec GetContractSpec()
+EmailSpec GetContractSpec(string title)
 {
     return new EmailSpec(
-        "Your document is signed",
-        """
-        Hi __FULL_NAME__,
-
-        Your document is signed.                
-        
-        Kind Regards
-        """);
+        $"Your \"{title}\" is SIGNED",
+        $"Your \"{title}\" is signed");
 }
 
 Metadata GetMetadata()
@@ -99,7 +96,8 @@ Metadata GetMetadata()
     return new Metadata(clientId, docKind, signDate);
 }
 
-SignerInfo GetSignerInfo(Nickname nickname, Email email, Phone mobile, int ordinal)
+SignerPlan GetSignerPlan(
+    Nickname nickname, Email email, Phone mobile, int ordinal)
 {
     var signer = new Signer()
     {
@@ -110,7 +108,7 @@ SignerInfo GetSignerInfo(Nickname nickname, Email email, Phone mobile, int ordin
         Company = $"{nickname}, Inc.",
     };
 
-    var signingPlan = new Handling()
+    var handling = new Handling()
     {
         Ordinal = ordinal,
         IdBySms = true,
@@ -128,7 +126,7 @@ SignerInfo GetSignerInfo(Nickname nickname, Email email, Phone mobile, int ordin
         PostalCode = "12345"
     };
 
-    return new SignerInfo(signer, signingPlan, address);
+    return new SignerPlan(signer, handling, address);
 }
 
 void HandleAccepted(ContractSender<Metadata>.Accepted accepted) =>

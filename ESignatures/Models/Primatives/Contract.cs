@@ -1,12 +1,17 @@
-﻿using FluentValidation;
+// ********************************************************
+// The use of this source code is licensed under the terms
+// of the MIT License (https://opensource.org/licenses/MIT)
+// ********************************************************
+
+using FluentValidation;
 using SquidEyes.Fundamentals;
 
 namespace ESignatures;
 
-public class ContractInfo<M>
+public class Contract<M>
     where M : class
 {
-    public class Validator : AbstractValidator<ContractInfo<M>>
+    public class Validator : AbstractValidator<Contract<M>>
     {
         public Validator()
         {

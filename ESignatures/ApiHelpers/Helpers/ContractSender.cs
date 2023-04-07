@@ -1,4 +1,9 @@
-﻿using OneOf;
+// ********************************************************
+// The use of this source code is licensed under the terms
+// of the MIT License (https://opensource.org/licenses/MIT)
+// ********************************************************
+
+using OneOf;
 using SquidEyes.Fundamentals;
 using System.Net;
 using System.Net.Http.Headers;
@@ -18,24 +23,24 @@ public class ContractSender<M>
 
     private static readonly HttpClient client = new();
     private static readonly Signer.Validator signerValidator = new();
-    private static readonly Handling.Validator signingPlanValidator = new();
+    private static readonly Handling.Validator handlingValidator = new();
     private static readonly Address.Validator addressValidator = new();
 
-    private readonly Dictionary<string, SignerInfo> signerInfos = new();
+    private readonly Dictionary<string, SignerPlan> signers = new();
     private readonly HashSet<Email> ccPdfsTo = new();
     private readonly Dictionary<string, string> keyValues = new();
 
     private readonly Uri contractsUri;
-    private readonly ContractInfo<M> contractInfo;
+    private readonly Contract<M> contractInfo;
 
     private bool isTest = false;
 
-    public ContractSender(Guid authToken, ContractInfo<M> contractInfo)
+    public ContractSender(Guid authToken, Contract<M> contractInfo)
     {
         authToken.MayNot().BeDefault();
         contractInfo.MayNot().BeNull();
 
-        new ContractInfo<M>.Validator().Validate(contractInfo);
+        new Contract<M>.Validator().Validate(contractInfo);
 
         this.contractInfo = contractInfo;
 
@@ -77,13 +82,13 @@ public class ContractSender<M>
     {
         signerValidator.Validate(signer);
 
-        signingPlanValidator.Validate(handling);
+        handlingValidator.Validate(handling);
 
         if (address != null)
             addressValidator.Validate(address);
 
-        signerInfos.Add(signer.GetSha256Hash(),
-            new SignerInfo(signer, handling, address!));
+        signers.Add(signer.GetSha256Hash(),
+            new SignerPlan(signer, handling, address!));
 
         if (addPlaceholders)
         {
@@ -112,10 +117,10 @@ public class ContractSender<M>
         return this;
     }
 
-    private static SignerPoco GetSignerData(SignerInfo info)
+    private static SignerPoco GetSignerPoco(SignerPlan signerPlan)
     {
-        var signer = info.Signer;
-        var handling = info.Handling;
+        var signer = signerPlan.Signer;
+        var handling = signerPlan.Handling;
 
         var idModes = (handling.IdByEmail, handling.IdBySms) switch
         {
@@ -143,7 +148,7 @@ public class ContractSender<M>
     {
         try
         {
-            if (signerInfos.Count == 0)
+            if (signers.Count == 0)
             {
                 return new Rejected(HttpStatusCode.BadRequest,
                     "A contract must have one or more signers!");
@@ -181,10 +186,10 @@ public class ContractSender<M>
                 ContractResultParser.Parse(responseJson);
 
             foreach (var key in signerIds.Keys)
-                signerInfos[key].Signer.SignerId = signerIds[key];
+                signers[key].Signer.SignerId = signerIds[key];
 
             return new Accepted(contractId,
-                signerInfos.Values.Select(si => si.Signer).ToArray());
+                signers.Values.Select(si => si.Signer).ToArray());
         }
         catch (Exception error)
         {
@@ -196,6 +201,7 @@ public class ContractSender<M>
     {
         return new ContractPoco()
         {
+            Branding = GetBranding(),
             Emails = GetEmails(),
             ExpireHours = contractInfo.ExpiryHours,
             IsTest = isTest ? "yes" : "no",
@@ -213,10 +219,22 @@ public class ContractSender<M>
     {
         var signers = new List<SignerPoco>();
 
-        foreach (var signer in signerInfos.Values)
-            signers.Add(GetSignerData(signer));
+        foreach (var signer in this.signers.Values)
+            signers.Add(ContractSender<M>.GetSignerPoco(signer));
 
         return signers;
+    }
+
+    private BrandingPoco GetBranding()
+    {
+        if (contractInfo.Company is null && contractInfo.LogoUri is null)
+            return null!;
+
+        return new BrandingPoco()
+        {
+            Company = contractInfo.Company!,
+            LogoUri = contractInfo?.LogoUri
+        };
     }
 
     private List<PlaceholderPoco> GetPlaceholders()
