@@ -16,7 +16,6 @@ public class ContractSender<M>
     public record Rejected(HttpStatusCode StatusCode, string ReasonPhrase);
     public record Failed(Exception Error);
     public record Cancelled();
-    public record EmailSpec(string Subject, string BodyText);
 
     private static readonly HttpClient client = new();
     private static readonly Signer.Validator signerValidator = new();
@@ -24,100 +23,40 @@ public class ContractSender<M>
     private static readonly Address.Validator addressValidator = new();
 
     private readonly Dictionary<string, SignerInfo> signerInfos = new();
-    private readonly Dictionary<string, string> placeholderDict = new();
     private readonly HashSet<Email> ccPdfsTo = new();
-    private readonly Dictionary<EmailKind, EmailSpec> emailSpecs = new();
+    private readonly Dictionary<string, string> keyValues = new();
 
     private readonly Uri contractsUri;
+    private readonly ContractInfo<M> contractInfo;
 
-    private Guid templateId = default;
-    private Email replyTo = default;
-    private M metadata = null!;
-    private Uri webHookUri = null!;
     private bool isTest = false;
-    private Locale locale = Locale.EN;
-    private int expiryHours = 48;
-    private string? title = null!;
 
-    public ContractSender(Guid authToken)
+    public ContractSender(Guid authToken, ContractInfo<M> contractInfo)
     {
         authToken.MayNot().BeDefault();
+        contractInfo.MayNot().BeNull();
+
+        new ContractInfo<M>.Validator().Validate(contractInfo);
+
+        this.contractInfo = contractInfo;
 
         contractsUri = new Uri(
             $"https://esignatures.io/api/contracts?token={authToken}");
-    }
 
-    public ContractSender<M> WithTemplate(Guid templateId)
-    {
-        templateId.MayNot().BeDefault();
+        var signDate = contractInfo.SignDate;
 
-        this.templateId = templateId;
+        if (signDate == default)
+            signDate = DateOnly.FromDateTime(DateTime.Today);
 
-        return this;
-    }
-
-    public ContractSender<M> WithTitle(string title)
-    {
-        if (title is not null && string.IsNullOrWhiteSpace(title))
-            throw new ArgumentOutOfRangeException(nameof(title));
-
-        this.title = title!;
-
-        return this;
-    }
-
-    public ContractSender<M> WithWebHook(Uri uri)
-    {
-        if (!uri.IsAbsoluteUri)
-            throw new ArgumentOutOfRangeException(nameof(uri));
-
-        webHookUri = uri;
-
-        return this;
-    }
-
-    public ContractSender<M> WithExpiryHours(int hours)
-    {
-        expiryHours.Must().BeBetween(1, 168);
-
-        expiryHours = hours;
-
-        return this;
-    }
-
-    public ContractSender<M> WithLocale(Locale locale)
-    {
-        if (locale == default)
-            throw new ArgumentNullException(nameof(locale));
-
-        this.locale = locale;
-
-        return this;
-    }
-
-    public ContractSender<M> WithMetadata(M value)
-    {
-        metadata = value.MayNot().BeNull();
-
-        return this;
+        WithPlaceholder("sign-date", signDate.ToString("MM/dd/yyyy"));
+        WithPlaceholder("sign-day", signDate.ToDayName());
+        WithPlaceholder("sign-month", signDate.ToMonthName());
+        WithPlaceholder("sign-year", signDate.Year.ToString());
     }
 
     public ContractSender<M> AsTest()
     {
         isTest = true;
-
-        return this;
-    }
-
-    public ContractSender<M> WithPubDate(DateOnly pubDate = default)
-    {
-        if (pubDate == default)
-            pubDate = DateOnly.FromDateTime(DateTime.Today);
-
-        placeholderDict["pub-date"] = pubDate.ToString("MM/dd/yyyy");
-        placeholderDict["pub-day"] = pubDate.ToDayName();
-        placeholderDict["pub-month"] = pubDate.ToMonthName();
-        placeholderDict["pub-year"] = pubDate.Year.ToString();
 
         return this;
     }
@@ -129,12 +68,12 @@ public class ContractSender<M>
 
         ArgumentNullException.ThrowIfNull(value);
 
-        placeholderDict[key] = value.ToString()!;
+        keyValues[key] = value.ToString()!;
 
         return this;
     }
 
-    public ContractSender<M> WithSigner(Signer signer, Handling handling,
+    public ContractSender<M> WithSignerInfo(Signer signer, Handling handling,
         Address? address = null!, bool addPlaceholders = true)
     {
         signerValidator.Validate(signer);
@@ -170,41 +109,6 @@ public class ContractSender<M>
             foreach (var key in dict.Keys)
                 WithPlaceholder(prefix + key, dict[key]);
         }
-
-        return this;
-    }
-
-    public ContractSender<M> WithCcEmail(string email) =>
-        WithCcPdfsTo(Email.From(email));
-
-    public ContractSender<M> WithCcPdfsTo(Email email)
-    {
-        email.MayNot().BeDefault();
-
-        ccPdfsTo.Add(email);
-
-        return this;
-    }
-
-    public ContractSender<M> WithReplyTo(string email) =>
-        WithReplyTo(Email.From(email));
-
-    public ContractSender<M> WithReplyTo(Email email)
-    {
-        email.MayNot().BeDefault();
-
-        replyTo = email;
-
-        return this;
-    }
-
-    public ContractSender<M> WithEmailSpec(
-        EmailKind emailKind, EmailSpec emailSpec)
-    {
-        emailKind.Must().BeEnumValue();
-        emailSpec.MayNot().BeNull();
-
-        emailSpecs[emailKind] = emailSpec;
 
         return this;
     }
@@ -246,20 +150,20 @@ public class ContractSender<M>
 
         try
         {
-            FailIfNotValid(!templateId.IsDefault(),
-                "A \"TemplateId\" must be supplied!");
+            //FailIfNotValid(!templateId.IsDefault(),
+            //    "A \"TemplateId\" must be supplied!");
 
-            FailIfNotValid(!title.IsDefault(),
-                "A \"Title\" must be supplied!");
+            //FailIfNotValid(!title.IsDefault(),
+            //    "A \"Title\" must be supplied!");
 
-            FailIfNotValid(webHookUri != null,
-                "A \"WebHook URI\" must be suppplied!");
+            //FailIfNotValid(webHookUri != null,
+            //    "A \"WebHook URI\" must be suppplied!");
 
-            FailIfNotValid(placeholderDict.ContainsKey("pub-date"),
-                "A \"PubDate\" must be supplied!");
+            //FailIfNotValid(placeholderDict.ContainsKey("pub-date"),
+            //    "A \"PubDate\" must be supplied!");
 
-            FailIfNotValid(signerInfos.Count > 0,
-                "A contract must have one or more signers!");
+            //FailIfNotValid(signerInfos.Count > 0,
+            //    "A contract must have one or more signers!");
 
             var data = GetContractData();
 
@@ -310,48 +214,44 @@ public class ContractSender<M>
         foreach (var signer in signerInfos.Values)
             signerDatas.Add(GetSignerData(signer));
 
-        List<Placeholder> placeholders = null!;
+        var placeholders = new List<Placeholder>();
 
-        if (placeholderDict.Count > 0)
+        foreach (var apiKey in keyValues.Keys)
         {
-            placeholders = new List<Placeholder>();
-
-            foreach (var apiKey in placeholderDict.Keys)
+            placeholders.Add(new Placeholder()
             {
-                placeholders.Add(new Placeholder()
-                {
-                    ApiKey = apiKey,
-                    Value = placeholderDict[apiKey]
-                });
-            }
+                ApiKey = apiKey,
+                Value = keyValues[apiKey]
+            });
         }
 
         EmailsData emailsData = null!;
 
-        if (emailSpecs.Count > 0 || replyTo != null || ccPdfsTo.Count > 0)
+        if (contractInfo.RequestSpec != null
+            || contractInfo.ContractSpec != null
+            || contractInfo.ReplyTo != null
+            || ccPdfsTo.Count > 0)
         {
             emailsData = new EmailsData();
 
-            if (emailSpecs.TryGetValue(
-                EmailKind.Request, out EmailSpec? requestSpec))
+            if (contractInfo.RequestSpec != null)
             {
-                emailsData.RequestSubject = requestSpec.Subject;
-                emailsData.RequestBodyText = requestSpec.BodyText;
+                emailsData.RequestSubject = contractInfo.RequestSpec.Subject;
+                emailsData.RequestBodyText = contractInfo.RequestSpec.BodyText;
             }
 
-            if (emailSpecs.TryGetValue(
-                EmailKind.Contract, out EmailSpec? contractSpec))
+            if (contractInfo.ContractSpec != null)
             {
-                emailsData.ContractSubject = contractSpec.Subject;
-                emailsData.ContractBodyText = contractSpec.BodyText;
+                emailsData.ContractSubject = contractInfo.ContractSpec.Subject;
+                emailsData.ContractBodyText = contractInfo.ContractSpec.BodyText;
             }
 
-            if (replyTo != null)
-                emailsData.ReplyTo = replyTo.ToString();
+            if (contractInfo.ReplyTo != null)
+                emailsData.ReplyTo = contractInfo.ReplyTo.ToString();
 
             if (ccPdfsTo.Count > 0)
             {
-                emailsData.CcPdfsTo = 
+                emailsData.CcPdfsTo =
                     ccPdfsTo.Select(v => v.ToString()).ToArray();
             }
         }
@@ -359,15 +259,15 @@ public class ContractSender<M>
         return new ContractData()
         {
             EmailsData = emailsData,
-            ExpireHours = expiryHours,
+            ExpireHours = contractInfo.ExpiryHours,
             IsTest = isTest ? "yes" : "no",
-            Locale = locale.ToCode(),
-            Metadata = metadata.ToString()!,
+            Locale = contractInfo.Locale.ToCode(),
+            Metadata = contractInfo.Metadata.ToString()!,
             Placeholders = placeholders,
-            TemplateId = templateId.ToString(),
-            Title = title!,
+            TemplateId = contractInfo.TemplateId.ToString(),
+            Title = contractInfo.Title,
             SignerDatas = signerDatas,
-            WebHook = webHookUri?.AbsoluteUri!
+            WebHook = contractInfo.WebHookUri.AbsoluteUri!
         };
     }
 }

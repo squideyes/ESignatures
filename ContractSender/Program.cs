@@ -1,4 +1,5 @@
-﻿using ESignatures;
+﻿using ContractSenderDemo;
+using ESignatures;
 using Microsoft.Extensions.Configuration;
 using SharedModels;
 using SquidEyes.Fundamentals;
@@ -16,9 +17,10 @@ var authToken = Guid.Parse(config["AuthToken"]!);
 
 // Sourced from command-line parameters
 var templateId = Guid.Parse(config["TemplateId"]!);
-var replyTo = config["ReplyTo"];
-var ccPdfsTo = config["CcPdfsTo"];
 var baseUri = new Uri(config["BaseUri"]!);
+var replyTo = config["ReplyTo"]!.ToEmailOrNull();
+var ccPdfsTo = config["CcPdfsTo"]!.ToEmailArrayOrNull();
+var logoUri = config["LogoUri"]!.ToUriOrNull();
 var partnerEmail = Email.From(config["PartnerEmail"]!);
 var partnerMobile = Phone.From(config["PartnerMobile"]!);
 var vendorEmail = Email.From(config["VendorEmail"]!);
@@ -33,22 +35,23 @@ try
     var p = GetSignerInfo(Partner, partnerEmail, partnerMobile, 0);
     var v = GetSignerInfo(Vendor, vendorEmail, vendorMobile, 1);
 
-    var request = new ContractSender<Metadata>(authToken)
-        .WithTemplate(templateId)
-        .WithTitle($"Marketing Agreement (w/{p.Signer.FullName})")
-        .WithWebHook(new Uri(baseUri, "/api/WebHook"))
-        .WithLocale(Locale.EN)
-        .WithExpiryHours(6)
-        .WithSigner(p.Signer, p.Handling, p.Address)
-        .WithSigner(v.Signer, v.Handling, v.Address)
-        .WithPubDate(pubDate)
-        .WithMetadata(metadata)
+    var contractInfo = new ContractInfo<Metadata>()
+    {
+        TemplateId = templateId,
+        Metadata = metadata,
+        Title = $"Marketing Agreement (w/{p.Signer.FullName})",
+        ReplyTo = replyTo,
+        LogoUri = logoUri!,
+        RequestSpec = GetRequestSpec(),
+        ContractSpec = GetContractSpec(),
+        WebHookUri = new Uri(baseUri, "/api/WebHook")
+    };
+
+    var request = new ContractSender<Metadata>(authToken, contractInfo)
+        .WithSignerInfo(p.Signer, p.Handling, p.Address)
+        .WithSignerInfo(v.Signer, v.Handling, v.Address)
         .WithPlaceholder("client-id", metadata.ClientId)
         .WithPlaceholder("doc-code", metadata.DocCode)
-        .WithReplyTo("louis@squideyes.com")
-        .WithCcPdfsTo(Email.From("louis@squideyes.com"))
-        .WithEmailSpec(EmailKind.Request, GetRequestEmailSpec())
-        .WithEmailSpec(EmailKind.Contract, GetContractEmailSpec())
         .AsTest();
 
     (await request.SendAsync(cts.Token)).Switch(
@@ -59,9 +62,9 @@ catch (Exception error)
     Console.WriteLine("ERROR: " + error.Message);
 }
 
-ContractSender<Metadata>.EmailSpec GetRequestEmailSpec()
+EmailSpec GetRequestSpec()
 {
-    return new ContractSender<Metadata>.EmailSpec(
+    return new EmailSpec(
         "Your document is ready to sign",
         """
         Hi __FULL_NAME__, 
@@ -72,9 +75,9 @@ ContractSender<Metadata>.EmailSpec GetRequestEmailSpec()
         """);
 }
 
-ContractSender<Metadata>.EmailSpec GetContractEmailSpec()
+EmailSpec GetContractSpec()
 {
-    return new ContractSender<Metadata>.EmailSpec(
+    return new EmailSpec(
         "Your document is signed",
         """
         Hi __FULL_NAME__,
@@ -89,13 +92,12 @@ Metadata GetMetadata()
 {
     var clientId = ClientId.Next();
     var docKind = DocKind.PartnerContract;
-    var docDate = new DateOnly(2023, 5, 23);
+    var signDate = new DateOnly(2023, 5, 23);
 
-    return new Metadata(clientId, docKind, docDate);
+    return new Metadata(clientId, docKind, signDate);
 }
 
-SignerInfo GetSignerInfo(
-    Nickname nickname, Email email, Phone mobile, int ordinal)
+SignerInfo GetSignerInfo(Nickname nickname, Email email, Phone mobile, int ordinal)
 {
     var signer = new Signer()
     {
