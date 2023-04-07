@@ -16,6 +16,12 @@ public class ContractInfo<M>
             RuleFor(x => x.Metadata)
                 .NotEmpty();
 
+            RuleFor(x => x.Company)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .Must(v => v.IsNonEmptyAndTrimmed())
+                .WithMessage("'%PropertyName%' must be a non-empty trimmed string.");
+
             RuleFor(x => x.Title)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -43,6 +49,7 @@ public class ContractInfo<M>
 
     public required Guid TemplateId { get; init; }
     public required M Metadata { get; init; }
+    public required string Company { get; init; }
     public required string Title { get; init; }
     public required Uri WebHookUri { get; init; }
 

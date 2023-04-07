@@ -18,6 +18,7 @@ var authToken = Guid.Parse(config["AuthToken"]!);
 // Sourced from command-line parameters
 var templateId = Guid.Parse(config["TemplateId"]!);
 var baseUri = new Uri(config["BaseUri"]!);
+var company = config["Company"]!;
 var replyTo = config["ReplyTo"]!.ToEmailOrNull();
 var ccPdfsTo = config["CcPdfsTo"]!.ToEmailArrayOrNull();
 var logoUri = config["LogoUri"]!.ToUriOrNull();
@@ -39,6 +40,7 @@ try
     {
         TemplateId = templateId,
         Metadata = metadata,
+        Company = company,
         Title = $"Marketing Agreement (w/{p.Signer.FullName})",
         ReplyTo = replyTo,
         LogoUri = logoUri!,

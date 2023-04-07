@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ESignatures.Internal;
+namespace ESignatures;
 
-internal class Placeholder
+internal class PlaceholderPoco
 {
     [JsonPropertyName("api_key")]
     public required string ApiKey { get; init; }

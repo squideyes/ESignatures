@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ESignatures.Internal;
+namespace ESignatures;
 
-internal class ContractData
+internal class ContractPoco
 {
     [JsonPropertyName("template_id")]
     public required string TemplateId { get; init; }
@@ -19,18 +19,21 @@ internal class ContractData
     [JsonPropertyName("metadata")]
     public required string Metadata { get; init; }
 
+    [JsonPropertyName("emails")]
+    public EmailsPoco? Emails { get; init; }
+
+    [JsonPropertyName("custom_branding")]
+    public BrandingPoco? Branding { get; init; }
+
     [JsonPropertyName("signers")]
-    public required List<SignerData>? SignerDatas { get; set; }
+    public required List<SignerPoco>? Signers { get; set; }
 
     [JsonPropertyName("placeholder_fields")]
-    public required List<Placeholder>? Placeholders { get; set; }
+    public required List<PlaceholderPoco>? Placeholders { get; set; }
 
     [JsonPropertyName("test")]
     public required string IsTest { get; init; }
 
     [JsonPropertyName("custom_webhook_url")]
     public required string WebHook { get; init; }
-
-    [JsonPropertyName("emails")]
-    public EmailsData? EmailsData { get; init; }
 }

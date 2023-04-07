@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ESignatures.Internal;
+namespace ESignatures;
 
-internal class SignerData
+internal class SignerPoco
 {
     [JsonPropertyName("name")]
     public required string FullName { get; init; }

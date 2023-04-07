@@ -1,5 +1,4 @@
-﻿using ESignatures.Internal;
-using OneOf;
+﻿using OneOf;
 using SquidEyes.Fundamentals;
 using System.Net;
 using System.Net.Http.Headers;
@@ -113,7 +112,7 @@ public class ContractSender<M>
         return this;
     }
 
-    private static SignerData GetSignerData(SignerInfo info)
+    private static SignerPoco GetSignerData(SignerInfo info)
     {
         var signer = info.Signer;
         var handling = info.Handling;
@@ -126,7 +125,7 @@ public class ContractSender<M>
             (false, false) => null!
         };
 
-        return new SignerData()
+        return new SignerPoco()
         {
             FullName = signer.FullName,
             Email = signer.Email.ToString(),
@@ -142,28 +141,13 @@ public class ContractSender<M>
     public async Task<OneOf<Accepted, Rejected, Failed, Cancelled>> SendAsync(
         CancellationToken cancellationToken)
     {
-        static void FailIfNotValid(bool isValid, string message)
-        {
-            if (!isValid)
-                throw new InvalidOperationException(message);
-        }
-
         try
         {
-            //FailIfNotValid(!templateId.IsDefault(),
-            //    "A \"TemplateId\" must be supplied!");
-
-            //FailIfNotValid(!title.IsDefault(),
-            //    "A \"Title\" must be supplied!");
-
-            //FailIfNotValid(webHookUri != null,
-            //    "A \"WebHook URI\" must be suppplied!");
-
-            //FailIfNotValid(placeholderDict.ContainsKey("pub-date"),
-            //    "A \"PubDate\" must be supplied!");
-
-            //FailIfNotValid(signerInfos.Count > 0,
-            //    "A contract must have one or more signers!");
+            if (signerInfos.Count == 0)
+            {
+                return new Rejected(HttpStatusCode.BadRequest,
+                    "A contract must have one or more signers!");
+            }
 
             var data = GetContractData();
 
@@ -187,7 +171,8 @@ public class ContractSender<M>
             if (cancellationToken.IsCancellationRequested)
                 return new Cancelled();
 
-            var responseJson = await response.Content.ReadAsStringAsync();
+            var responseJson = await response.Content
+                .ReadAsStringAsync(cancellationToken);
 
             if (cancellationToken.IsCancellationRequested)
                 return new Cancelled();
@@ -207,67 +192,82 @@ public class ContractSender<M>
         }
     }
 
-    private ContractData GetContractData()
+    private ContractPoco GetContractData()
     {
-        var signerDatas = new List<SignerData>();
+        return new ContractPoco()
+        {
+            Emails = GetEmails(),
+            ExpireHours = contractInfo.ExpiryHours,
+            IsTest = isTest ? "yes" : "no",
+            Locale = contractInfo.Locale.ToCode(),
+            Metadata = contractInfo.Metadata.ToString()!,
+            Placeholders = GetPlaceholders(),
+            TemplateId = contractInfo.TemplateId.ToString(),
+            Title = contractInfo.Title,
+            Signers = GetSigners(),
+            WebHook = contractInfo.WebHookUri.AbsoluteUri!
+        };
+    }
+
+    private List<SignerPoco> GetSigners()
+    {
+        var signers = new List<SignerPoco>();
 
         foreach (var signer in signerInfos.Values)
-            signerDatas.Add(GetSignerData(signer));
+            signers.Add(GetSignerData(signer));
 
-        var placeholders = new List<Placeholder>();
+        return signers;
+    }
+
+    private List<PlaceholderPoco> GetPlaceholders()
+    {
+        var placeholders = new List<PlaceholderPoco>();
 
         foreach (var apiKey in keyValues.Keys)
         {
-            placeholders.Add(new Placeholder()
+            placeholders.Add(new PlaceholderPoco()
             {
                 ApiKey = apiKey,
                 Value = keyValues[apiKey]
             });
         }
 
-        EmailsData emailsData = null!;
+        return placeholders;
+    }
 
-        if (contractInfo.RequestSpec != null
-            || contractInfo.ContractSpec != null
-            || contractInfo.ReplyTo != null
-            || ccPdfsTo.Count > 0)
+    private EmailsPoco GetEmails()
+    {
+        EmailsPoco poco = null!;
+
+        if (contractInfo.RequestSpec == null && contractInfo.ContractSpec == null
+            && contractInfo.ReplyTo == null && ccPdfsTo.Count == 0)
         {
-            emailsData = new EmailsData();
-
-            if (contractInfo.RequestSpec != null)
-            {
-                emailsData.RequestSubject = contractInfo.RequestSpec.Subject;
-                emailsData.RequestBodyText = contractInfo.RequestSpec.BodyText;
-            }
-
-            if (contractInfo.ContractSpec != null)
-            {
-                emailsData.ContractSubject = contractInfo.ContractSpec.Subject;
-                emailsData.ContractBodyText = contractInfo.ContractSpec.BodyText;
-            }
-
-            if (contractInfo.ReplyTo != null)
-                emailsData.ReplyTo = contractInfo.ReplyTo.ToString();
-
-            if (ccPdfsTo.Count > 0)
-            {
-                emailsData.CcPdfsTo =
-                    ccPdfsTo.Select(v => v.ToString()).ToArray();
-            }
+            return poco;
         }
 
-        return new ContractData()
+        poco = new EmailsPoco();
+
+        if (contractInfo.RequestSpec != null)
         {
-            EmailsData = emailsData,
-            ExpireHours = contractInfo.ExpiryHours,
-            IsTest = isTest ? "yes" : "no",
-            Locale = contractInfo.Locale.ToCode(),
-            Metadata = contractInfo.Metadata.ToString()!,
-            Placeholders = placeholders,
-            TemplateId = contractInfo.TemplateId.ToString(),
-            Title = contractInfo.Title,
-            SignerDatas = signerDatas,
-            WebHook = contractInfo.WebHookUri.AbsoluteUri!
-        };
+            poco.RequestSubject = contractInfo.RequestSpec.Subject;
+            poco.RequestBodyText = contractInfo.RequestSpec.BodyText;
+        }
+
+        if (contractInfo.ContractSpec != null)
+        {
+            poco.ContractSubject = contractInfo.ContractSpec.Subject;
+            poco.ContractBodyText = contractInfo.ContractSpec.BodyText;
+        }
+
+        if (contractInfo.ReplyTo != null)
+            poco.ReplyTo = contractInfo.ReplyTo.ToString();
+
+        if (ccPdfsTo.Count > 0)
+        {
+            poco.CcPdfsTo =
+                ccPdfsTo.Select(v => v.ToString()).ToArray();
+        }
+
+        return poco;
     }
 }

@@ -2,7 +2,7 @@
 
 namespace ESignatures;
 
-internal class EmailsData
+internal class EmailsPoco
 {
     [JsonPropertyName("signature_request_subject")]
     public string? RequestSubject { get; set; }
