@@ -61,7 +61,7 @@ public class WebHookSink
         [QueueTrigger(WEBHOOK_RECEIVED)] string json,
         CancellationToken cancellationToken)
     {
-        //var node = JsonNode.Parse(json!);
+        var node = JsonNode.Parse(json!);
 
         //async Task SendAsync<T>(Func<JsonNode?, T> getWebHook)
         //    where T : IWebHook<T>, new()
