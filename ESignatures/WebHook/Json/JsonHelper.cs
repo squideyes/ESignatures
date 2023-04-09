@@ -9,7 +9,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace SquidEyes.ESignatures.Json;
+namespace SquidEyes.ESignatures.WebHook;
 
 public static class JsonHelper
 {

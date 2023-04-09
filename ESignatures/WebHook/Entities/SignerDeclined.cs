@@ -3,7 +3,7 @@
 // of the MIT License (https://opensource.org/licenses/MIT)
 // ********************************************************
 
-namespace SquidEyes.ESignatures.Json;
+namespace SquidEyes.ESignatures.WebHook;
 
 public class SignerDeclined<M> : IWebHook<SignerDeclined<M>>, IBasicWebHook<M>
     where M : class

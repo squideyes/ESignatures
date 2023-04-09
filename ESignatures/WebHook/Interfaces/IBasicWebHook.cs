@@ -3,11 +3,12 @@
 // of the MIT License (https://opensource.org/licenses/MIT)
 // ********************************************************
 
-namespace SquidEyes.ESignatures.Json;
+namespace SquidEyes.ESignatures.WebHook;
 
-public interface IWebHook<T>
-    where T : new()
+public interface IBasicWebHook<M>
+    where M : class
 {
-    Guid ContractId { get; }
-    WebHookKind WebHookKind { get; }
+    Guid ContractId { get; set; }
+    M? Metadata { get; set; }
+    BasicSigner? Signer { get; set; }
 }

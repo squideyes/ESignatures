@@ -5,7 +5,7 @@
 
 using SquidEyes.Fundamentals;
 
-namespace SquidEyes.ESignatures.Json;
+namespace SquidEyes.ESignatures.WebHook;
 
 public class BasicSigner
 {

@@ -3,13 +3,12 @@
 // of the MIT License (https://opensource.org/licenses/MIT)
 // ********************************************************
 
-//using SquidEyes.Fundamentals;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace SquidEyes.ESignatures.Json;
+namespace SquidEyes.ESignatures.WebHook;
 
 public static class JsonExtenders
 {
@@ -23,9 +22,9 @@ public static class JsonExtenders
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
-        //options.Converters.Add(new JsonStringClientIdConverter());
+        options.Converters.Add(new JsonStringClientIdConverter());
         options.Converters.Add(new JsonStringEnumConverter());
-        //options.Converters.Add(new JsonStringShortIdConverter());
+        options.Converters.Add(new JsonStringShortIdConverter());
     }
 
     public static string ToJson<T>(this T value) =>

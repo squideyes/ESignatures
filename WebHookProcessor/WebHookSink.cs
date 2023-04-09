@@ -3,13 +3,12 @@
 // of the MIT License (https://opensource.org/licenses/MIT)
 // ********************************************************
 
-using Azure.Storage.Blobs;
-using SquidEyes.ESignatures.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SharedModels;
+using SquidEyes.ESignatures.WebHook;
 using System.Net;
 using static Microsoft.Azure.Functions.Worker.AuthorizationLevel;
 using static System.Net.HttpStatusCode;
@@ -36,7 +35,6 @@ public class WebHookSink
     }
 
     private readonly ILogger logger;
-    private readonly BlobContainerClient container;
     private readonly ServiceBusSender serviceBus;
     private readonly Guid apiKey;
 
@@ -44,12 +42,7 @@ public class WebHookSink
     {
         logger = loggerFactory.CreateLogger<WebHookSink>();
 
-        var connString = config["AzureWebJobsStorage"];
-
-        apiKey = Guid.Parse(config["SquidEyes.ESignatures:ApiKey"]!);
-
-        container = new BlobContainerClient(connString,
-            config["Storage:Containers:SquidEyes.ESignatures"]);
+        apiKey = Guid.Parse(config["ESignatures:ApiKey"]!);
 
         serviceBus = new ServiceBusSender(
             config["ServiceBus:ConnString"]!,
