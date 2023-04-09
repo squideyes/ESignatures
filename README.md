@@ -6,12 +6,12 @@ The client is meant to be paired with a custom web-hook-processor like the inclu
 To use the demos you'll need to signup for a demo <a href="https://esignatures.io/" target="_blank">eSignatures.io</a> account.  Once the account is created, you'll then need to do the following:
 
 1. Click on the "**API & Automation**" menu item (on the uper right-hand corner of the  eSignatures.com site) and then take note of **Your Secret Token**.  You'll need it to run the ContractSender demo.
-2. Go to the https://esignatures.io/contract_templates web page and then import the **SampleTemplate.esiot** file (located in the ESignatures solution folder).
+2. Go to the https://esignatures.io/contract_templates web page and then import the **MarketingAgreement.esiot** file (located in the ESignatures solution folder).
 3. Take note of the **TemplateId** (a smallish light-gray GUID, labeled "**ID**," and found in the upper left-hand corner of the web-page).  You'll need it to run the ContractSender demo.
 4. Install <a href="https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio" target="_blank">Azurite</a>, if you haven't done so already. Azurite is a local emulator for Azure Blob Storage.
 5. Install <a href="https://ngrok.com/download" target="_blank">NGROK</a>; a command-line utility that facilitates the receipt of web-hooks messages by code running on your local computer.
 6. Run "**ngrok http http://localhost:7159**" in a command window and then take note of the **Forwarding** address (you can ignore the local address, after the arrow).
-7. Run **WebHookProcessor**.  As a side-effect, an "**esignatures**" blob container will be automatically created in Azurite, if it doesn't exist already. 
+7. Run **WebHookProcessor**.  As a side-effect, an "**webhook-received**" queue  will be automatically created in Azurite, if it doesn't exist already. 
 8. Configure the following settings in the ContractSender **appsettings.json** file:
 - **TemplateId**: TemplateId from Step #3, above
 - **BaseUri**: NGROK Forwarding address from Step #6, above

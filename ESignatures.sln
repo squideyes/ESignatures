@@ -11,8 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{24283B49-5
 		Fundamentals.sln.headertext = Fundamentals.sln.headertext
 		global.json = global.json
 		LICENSE.md = LICENSE.md
+		MarketingAgreement.esiot = MarketingAgreement.esiot
 		README.md = README.md
-		SampleTemplate.esiot = SampleTemplate.esiot
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Code", "Code", "{999B310E-831E-4565-A5A1-919E8EC780A4}"

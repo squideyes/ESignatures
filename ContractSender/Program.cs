@@ -43,7 +43,7 @@ try
     var p = GetSignerAndAddress(Partner, partnerEmail, partnerMobile, 0);
     var v = GetSignerAndAddress(Vendor, vendorEmail, vendorMobile, 1);
 
-    var title = $"Marketing Agreement (w/{p.Signer.Company})";
+    var title = $"Marketing Agreement";
 
     var contract = new Contract<Metadata>()
     {

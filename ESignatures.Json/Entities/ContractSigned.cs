@@ -16,16 +16,4 @@ public class ContractSigned<M> : IWebHook<ContractSigned<M>>
     public WebHookKind WebHookKind => WebHookKind.ContractSigned;
 
     public string GetBlobName() => $"Signed/{ContractId:N}.json";
-
-    public Dictionary<string, string> GetMetadata()
-    {
-        return new Dictionary<string, string>()
-        {
-            { "ContractId", ContractId.ToString() },
-            //{ "ClientId", Metadata!["ClientId"] },
-            //{ "TrackingId", Metadata!["TrackingId"] },
-            //{ "Signers", Signers.ToJson() },
-            //{ "ContractKind", Metadata!["Token"] }
-        };
-    }
 }
