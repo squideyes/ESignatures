@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ESignatures.Client\ESignatures.Client.csproj" />
+    <ProjectReference Include="..\ESignatures\ESignatures.csproj" />
     <ProjectReference Include="..\SharedModels\SharedModels.csproj" />
   </ItemGroup>
 

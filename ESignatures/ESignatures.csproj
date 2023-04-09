@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+        <AssemblyName>SquidEyes.$(MSBuildProjectName)</AssemblyName>
+        <RootNamespace>SquidEyes.$(MSBuildProjectName)</RootNamespace>
+        <Title>SquidEyes Fundamentals</Title>
+        <Authors>Louis S. Berman</Authors>
+        <Company>SquidEyes, LLC.</Company>
+        <Description>Fluent" ContractSender and helper classes for eSigntures.io</Description>
+        <Copyright>Copyright 2023 by SquidEyes, LLC.</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageTags>esignatures.io;contracts;signing;contract-signing</PackageTags>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <MinVerTagPrefix>v</MinVerTagPrefix>
+        <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <EnablePackageValidation>true</EnablePackageValidation>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageIcon>Icon.jpg</PackageIcon>
+        <RepositoryUrl>https://github.com/squideyes/ESignatures</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/squideyes/ESignatures</PackageProjectUrl>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="Icon.jpg" Pack="true" PackagePath="" />
+        <None Include="..\README.md" Pack="true" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.1.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="OneOf" Version="3.0.243" />
+        <PackageReference Include="SquidEyes.Fundamentals" Version="1.3.2" />
+        <PackageReference Include="MinVer" Version="4.3.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+</Project>

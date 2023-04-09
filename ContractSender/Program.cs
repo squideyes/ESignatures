@@ -4,7 +4,7 @@
 // ********************************************************
 
 using ContractSenderDemo;
-using ESignatures.Client;
+using SquidEyes.ESignatures.Client;
 using Microsoft.Extensions.Configuration;
 using SharedModels;
 using SquidEyes.Fundamentals;

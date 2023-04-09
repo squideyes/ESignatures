@@ -1,6 +1,6 @@
-To to publish **ESignatures** to NuGet via a GitHub action, do the following:
+To to publish **SquidEyes.ESignatures** to NuGet via a GitHub action, do the following:
 
-* **<a href="https://www.freecodecamp.org/news/how-to-fork-a-github-repository/#:~:text=To%20follow%20along%2C%20browse%20to,created%20under%20your%20GitHub%20account." target="_blank">Fork ESignatures</a>** (if you haven't already done so)
+* **<a href="https://www.freecodecamp.org/news/how-to-fork-a-github-repository/#:~:text=To%20follow%20along%2C%20browse%20to,created%20under%20your%20GitHub%20account." target="_blank">Fork SquidEyes.ESignatures</a>** (if you haven't already done so)
 * **<a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository" target="_blank">Create a short-lived branch</a>** (i.e. "my-feature")
 * **Add/update functionality** (see [CONTRIBUTING.md](https://github.com/squideyes/Basics/blob/master/CONTRIBUTING.md) for details)
 * **Build your code**, to make sure it compiles

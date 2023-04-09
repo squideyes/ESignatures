@@ -4,7 +4,7 @@
 // ********************************************************
 
 using Azure.Storage.Blobs;
-using ESignatures.Json;
+using SquidEyes.ESignatures.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
@@ -46,10 +46,10 @@ public class WebHookSink
 
         var connString = config["AzureWebJobsStorage"];
 
-        apiKey = Guid.Parse(config["ESignatures:ApiKey"]!);
+        apiKey = Guid.Parse(config["SquidEyes.ESignatures:ApiKey"]!);
 
         container = new BlobContainerClient(connString,
-            config["Storage:Containers:ESignatures"]);
+            config["Storage:Containers:SquidEyes.ESignatures"]);
 
         serviceBus = new ServiceBusSender(
             config["ServiceBus:ConnString"]!,
