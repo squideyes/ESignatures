@@ -3,7 +3,6 @@
 // of the MIT License (https://opensource.org/licenses/MIT)
 // ********************************************************
 
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ESignatures.Client;
@@ -19,19 +18,9 @@ internal static partial class MiscExtenders
     {
         return value switch
         {
-            Locale.ENGB => "enGB",
+            Locale.EN => "en",
             _ => value.ToString().ToLower()
         };
-    }
-
-
-    public static void AppendDelimited(
-        this StringBuilder sb, string value, string delimiter)
-    {
-        if (sb.Length > 0)
-            sb.Append(delimiter);
-
-        sb.Append(value);
     }
 
     [GeneratedRegex("^(?!-)(?!.*--)[a-z0-9-]{2,32}(?<!-)$")]

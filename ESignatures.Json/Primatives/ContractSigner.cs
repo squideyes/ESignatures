@@ -3,10 +3,10 @@
 // of the MIT License (https://opensource.org/licenses/MIT)
 // ********************************************************
 
-namespace ESignatures.Client;
+namespace ESignatures.Json;
 
-public class SignerEvent
+public class ContractSigner: BasicSigner
 {
-    public required SignerEventKind Kind { get; init; }
-    public required DateTime TimeStamp { get; init; }
+    public required SignerEvent[] Events { get; init; }
+    public required Dictionary<string, string> Values { get; init; }
 }

@@ -30,6 +30,9 @@ internal class SignerPoco
     [JsonPropertyName("signed_document_delivery_method")]
     public required string GetDocBy { get; init; }
 
+    [JsonPropertyName("redirect_url")]
+    public string? RedirectUrl { get; init; }
+
     [JsonPropertyName("required_identification_methods")]
     public required string[] IdModes { get; init; }
 }

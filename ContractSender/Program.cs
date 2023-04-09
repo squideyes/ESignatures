@@ -40,8 +40,8 @@ var signDate = DateOnly.FromDateTime(DateTime.Today);
 
 try
 {
-    var p = GetSignerPlan(Partner, partnerEmail, partnerMobile, 0);
-    var v = GetSignerPlan(Vendor, vendorEmail, vendorMobile, 1);
+    var p = GetSignerAndAddress(Partner, partnerEmail, partnerMobile, 0);
+    var v = GetSignerAndAddress(Vendor, vendorEmail, vendorMobile, 1);
 
     var title = $"Marketing Agreement (w/{p.Signer.Company})";
 
@@ -59,8 +59,8 @@ try
     };
 
     var request = new ContractSender<Metadata>(authToken, contract)
-        .WithSignerInfo(p.Signer, p.Handling, p.Address)
-        .WithSignerInfo(v.Signer, v.Handling, v.Address)
+        .WithSigner(p.Signer, p.Address, GetHandling(1))
+        .WithSigner(v.Signer, v.Address, GetHandling(0))
         .WithPlaceholder("client-id", metadata.ClientId)
         .WithPlaceholder("doc-code", metadata.DocCode)
         .AsTest();
@@ -96,7 +96,19 @@ Metadata GetMetadata()
     return new Metadata(clientId, docKind, signDate);
 }
 
-SignerPlan GetSignerPlan(
+Handling GetHandling(int ordinal)
+{
+    return new Handling()
+    {
+        Ordinal = ordinal,
+        IdBySms = true,
+        IdByEmail = true,
+        SigReqBy = Mode.Email,
+        GetDocBy = Mode.Email
+    };
+}
+
+(Signer Signer, Address Address) GetSignerAndAddress(
     Nickname nickname, Email email, Phone mobile, int ordinal)
 {
     var signer = new Signer()
@@ -108,15 +120,6 @@ SignerPlan GetSignerPlan(
         Company = $"{nickname}, Inc.",
     };
 
-    var handling = new Handling()
-    {
-        Ordinal = ordinal,
-        IdBySms = true,
-        IdByEmail = true,
-        SigReqBy = Mode.Email,
-        GetDocBy = Mode.Email
-    };
-
     var address = new Address()
     {
         Country = "US",
@@ -126,7 +129,7 @@ SignerPlan GetSignerPlan(
         PostalCode = "12345"
     };
 
-    return new SignerPlan(signer, handling, address);
+    return (signer, address);
 }
 
 void HandleAccepted(ContractSender<Metadata>.Accepted accepted) =>

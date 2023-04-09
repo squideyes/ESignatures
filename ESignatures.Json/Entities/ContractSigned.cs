@@ -11,7 +11,7 @@ public class ContractSigned<M> : IWebHook<ContractSigned<M>>
     public Guid ContractId { get; init; }
     public M? Metadata { get; init; }
     public Uri? PdfUri { get; init; }
-    public Signer[]? Signers { get; init; }
+    public BasicSigner[]? Signers { get; init; }
 
     public WebHookKind WebHookKind => WebHookKind.ContractSigned;
 

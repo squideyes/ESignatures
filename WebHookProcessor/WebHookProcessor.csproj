@@ -17,6 +17,7 @@
     <PackageReference Include="SquidEyes.Fundamentals" Version="1.3.2" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ESignatures.Json\ESignatures.Json.csproj" />
     <ProjectReference Include="..\SharedModels\SharedModels.csproj" />
   </ItemGroup>
   <ItemGroup>

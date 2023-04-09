@@ -21,12 +21,15 @@ public class ContractSender<M>
     public record Failed(Exception Error);
     public record Cancelled();
 
+    private record SignerInfo(
+        Signer Signer, Address Address, Handling Handling);
+
     private static readonly HttpClient client = new();
     private static readonly Signer.Validator signerValidator = new();
     private static readonly Handling.Validator handlingValidator = new();
     private static readonly Address.Validator addressValidator = new();
 
-    private readonly Dictionary<string, SignerPlan> signers = new();
+    private readonly Dictionary<string, SignerInfo> signers = new();
     private readonly HashSet<Email> ccPdfsTo = new();
     private readonly Dictionary<string, string> keyValues = new();
 
@@ -67,8 +70,7 @@ public class ContractSender<M>
 
     public ContractSender<M> WithPlaceholder(string key, object value)
     {
-        if (!key.IsApiKey())
-            throw new ArgumentOutOfRangeException(nameof(key));
+        key.Must().Be(v => v.IsApiKey());
 
         ArgumentNullException.ThrowIfNull(value);
 
@@ -77,50 +79,44 @@ public class ContractSender<M>
         return this;
     }
 
-    public ContractSender<M> WithSignerInfo(Signer signer, Handling handling,
-        Address? address = null!, bool addPlaceholders = true)
+    public ContractSender<M> WithSigner(
+        Signer signer, Address address, Handling handling)
     {
         signerValidator.Validate(signer);
-
+        addressValidator.Validate(address);
         handlingValidator.Validate(handling);
 
-        if (address != null)
-            addressValidator.Validate(address);
-
         signers.Add(signer.GetSha256Hash(),
-            new SignerPlan(signer, handling, address!));
+            new SignerInfo(signer, address, handling));
 
-        if (addPlaceholders)
+        var dict = new Dictionary<string, string>
         {
-            var dict = new Dictionary<string, string>
-            {
-                { "address1", address!.Address1! },
-                { "address2", address!.Address2! },
-                { "company", signer.Company! },
-                { "country", address!.Country! },
-                { "email", signer.Email!.ToString() },
-                { "locality", address!.Locality! },
-                { "mobile", signer.Mobile!.ToString() },
-                { "nickname", signer.Nickname!.ToString() },
-                { "name", signer.FullName! },
-                { "one-line-address", address!.GetOneLineAddress() },
-                { "postal-code", address!.PostalCode! },
-                { "region", address!.Region! }
-            };
+            { "address1", address!.Address1! },
+            { "address2", address!.Address2! },
+            { "company", signer.Company! },
+            { "country", address!.Country! },
+            { "email", signer.Email!.ToString() },
+            { "locality", address!.Locality! },
+            { "mobile", signer.Mobile!.ToString() },
+            { "nickname", signer.Nickname!.ToString() },
+            { "name", signer.FullName! },
+            { "one-line-address", address!.GetOneLineAddress() },
+            { "postal-code", address!.PostalCode! },
+            { "region", address!.Region! }
+        };
 
-            var prefix = signer.Nickname.ToString().ToLower() + "-";
+        var prefix = signer.Nickname.ToString().ToLower() + "-";
 
-            foreach (var key in dict.Keys)
-                WithPlaceholder(prefix + key, dict[key]);
-        }
+        foreach (var key in dict.Keys)
+            WithPlaceholder(prefix + key, dict[key]);
 
         return this;
     }
 
-    private static SignerPoco GetSignerPoco(SignerPlan signerPlan)
+    private static SignerPoco GetSignerPoco(SignerInfo signerInfo)
     {
-        var signer = signerPlan.Signer;
-        var handling = signerPlan.Handling;
+        var signer = signerInfo.Signer;
+        var handling = signerInfo.Handling;
 
         var idModes = (handling.IdByEmail, handling.IdBySms) switch
         {

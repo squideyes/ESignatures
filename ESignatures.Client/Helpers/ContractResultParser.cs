@@ -11,6 +11,9 @@ namespace ESignatures.Client;
 
 internal class ContractResultParser
 {
+    public record ContractResult(
+        Guid ContractId, Dictionary<string, Guid> SignerIds);
+
     private class Root
     {
         [JsonPropertyName("status")]
@@ -50,7 +53,7 @@ internal class ContractResultParser
         public required string Mobile { get; init; }
     }
 
-    internal static (Guid ContractId, Dictionary<string, Guid> SignerIds) Parse(string json)
+    internal static ContractResult Parse(string json)
     {
         var root = JsonSerializer.Deserialize<Root>(json);
 
@@ -65,6 +68,6 @@ internal class ContractResultParser
             dict.Add(key, new Guid(s.SignerId!));
         }
 
-        return (contractId, dict);
+        return new ContractResult(contractId, dict);
     }
 }

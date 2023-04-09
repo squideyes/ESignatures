@@ -5,11 +5,12 @@
 
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace ESignatures.Json;
 
-public static class JsonExtenders
+internal static class JsonExtenders
 {
     private static readonly JsonSerializerOptions options;
 
@@ -28,4 +29,20 @@ public static class JsonExtenders
 
     public static string ToJson(this object? value) =>
         JsonSerializer.Serialize(value, options);
+
+    public static JsonNode? GetDataIfStatusIs(this JsonNode? node, string status)
+    {
+        var actual = node.GetString("status");
+
+        if (actual != status)
+        {
+            throw new InvalidDataException(
+                $"\"{actual}\" JSON received when \"{status}\" was expected!");
+        }
+
+        return node!["data"];
+    }
+
+    public static string GetString(this JsonNode? node, string propertyName) =>
+        (string)node![propertyName]!;
 }

@@ -4,10 +4,8 @@
 // ********************************************************
 
 using Microsoft.Azure.Functions.Worker.Http;
-using SharedModels;
 using System.Net;
 using System.Text;
-using System.Text.Json.Nodes;
 
 namespace WebHookProcessor;
 

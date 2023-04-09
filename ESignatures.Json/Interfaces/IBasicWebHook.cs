@@ -10,5 +10,5 @@ public interface IBasicWebHook<M>
 {
     Guid ContractId { get; set; }
     M? Metadata { get; set; }
-    Signer? Signer { get; set; }
+    BasicSigner? Signer { get; set; }
 }

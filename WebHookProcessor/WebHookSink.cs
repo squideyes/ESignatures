@@ -4,6 +4,7 @@
 // ********************************************************
 
 using Azure.Storage.Blobs;
+using ESignatures.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
@@ -61,12 +62,12 @@ public class WebHookSink
         [QueueTrigger(WEBHOOK_RECEIVED)] string json,
         CancellationToken cancellationToken)
     {
-        var node = JsonNode.Parse(json!);
+        //var node = JsonNode.Parse(json!);
 
         //async Task SendAsync<T>(Func<JsonNode?, T> getWebHook)
         //    where T : IWebHook<T>, new()
         //{
-        //    await serviceBus.SendAsync(getWebHook(node!), cancellationToken);
+        //    //await serviceBus.SendAsync(getWebHook(node!), cancellationToken);
         //}
 
         //switch (node.GetString("status"))
