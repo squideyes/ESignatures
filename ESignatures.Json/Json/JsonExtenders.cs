@@ -3,6 +3,7 @@
 // of the MIT License (https://opensource.org/licenses/MIT)
 // ********************************************************
 
+using SquidEyes.Fundamentals;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -10,7 +11,7 @@ using System.Text.Json.Serialization;
 
 namespace ESignatures.Json;
 
-internal static class JsonExtenders
+public static class JsonExtenders
 {
     private static readonly JsonSerializerOptions options;
 
@@ -27,10 +28,10 @@ internal static class JsonExtenders
         options.Converters.Add(new JsonStringShortIdConverter());
     }
 
-    public static string ToJson(this object? value) =>
+    public static string ToJson<T>(this T value) =>
         JsonSerializer.Serialize(value, options);
 
-    public static JsonNode? GetDataIfStatusIs(this JsonNode? node, string status)
+    internal static JsonNode? GetDataIfStatusIs(this JsonNode? node, string status)
     {
         var actual = node.GetString("status");
 
@@ -43,6 +44,6 @@ internal static class JsonExtenders
         return node!["data"];
     }
 
-    public static string GetString(this JsonNode? node, string propertyName) =>
+    internal static string GetString(this JsonNode? node, string propertyName) =>
         (string)node![propertyName]!;
 }

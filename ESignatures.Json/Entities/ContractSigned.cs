@@ -24,7 +24,7 @@ public class ContractSigned<M> : IWebHook<ContractSigned<M>>
             { "ContractId", ContractId.ToString() },
             //{ "ClientId", Metadata!["ClientId"] },
             //{ "TrackingId", Metadata!["TrackingId"] },
-            { "Signers", Signers.ToJson() },
+            //{ "Signers", Signers.ToJson() },
             //{ "ContractKind", Metadata!["Token"] }
         };
     }

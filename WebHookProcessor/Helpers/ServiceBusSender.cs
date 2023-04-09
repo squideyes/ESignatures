@@ -4,7 +4,7 @@
 // ********************************************************
 
 using Azure.Messaging.ServiceBus;
-using SharedModels;
+using ESignatures.Json;
 using AMS = Azure.Messaging.ServiceBus;
 
 namespace WebHookProcessor;
@@ -29,30 +29,30 @@ internal sealed class ServiceBusSender : IAsyncDisposable
         await sender.DisposeAsync();
     }
 
-    //public async Task SendAsync<T>(T webHook, CancellationToken cancellationToken)
-    //    where T : IWebHook<T>, new()
-    //{
-    //    await sender.SendMessageAsync(GetMessage(webHook), cancellationToken);
-    //}
+    public async Task SendAsync<T>(T data, CancellationToken cancellationToken)
+        where T : IWebHook<T>, new()
+    {
+        await sender.SendMessageAsync(GetMessage(data), cancellationToken);
+    }
 
-    //private ServiceBusMessage GetMessage<T>(T data)
-    //    where T : IWebHook<T>, new()
-    //{
-    //    var message = new ServiceBusMessage(data.ToJson())
-    //    {
-    //        ContentType = "application/json",
-    //        CorrelationId = data.ContractId.ToString(),
-    //        MessageId = Guid.NewGuid().ToString(),
-    //        Subject = $"{data.ContractId} ({data.WebHookKind})",
-    //        TimeToLive = TimeSpan.FromHours(ttlHours)
-    //    };
+    private ServiceBusMessage GetMessage<T>(T data)
+        where T : IWebHook<T>, new()
+    {
+        var message = new ServiceBusMessage(data.ToJson())
+        {
+            ContentType = "application/json",
+            CorrelationId = data.ContractId.ToString(),
+            MessageId = Guid.NewGuid().ToString(),
+            Subject = $"{data.ContractId} ({data.WebHookKind})",
+            TimeToLive = TimeSpan.FromHours(ttlHours)
+        };
 
-    //    message.ApplicationProperties
-    //        .Add("ContractId", data.ContractId);
+        message.ApplicationProperties
+            .Add("ContractId", data.ContractId);
 
-    //    message.ApplicationProperties.Add(
-    //        "WebHookKind", data.WebHookKind.ToString());
+        message.ApplicationProperties.Add(
+            "WebHookKind", data.WebHookKind.ToString());
 
-    //    return message;
-    //}
+        return message;
+    }
 }

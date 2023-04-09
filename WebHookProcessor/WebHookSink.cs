@@ -9,8 +9,8 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SharedModels;
 using System.Net;
-using System.Text.Json.Nodes;
 using static Microsoft.Azure.Functions.Worker.AuthorizationLevel;
 using static System.Net.HttpStatusCode;
 
@@ -25,14 +25,14 @@ public class WebHookSink
         public ReceiveWebHookResult(HttpRequestData request,
             HttpStatusCode statusCode, string message, string json = null!)
         {
-            Response = request.GetResponse(statusCode, message);
             Json = json;
+            Response = request.GetResponse(statusCode, message);
         }
-
-        public HttpResponseData Response { get; }
 
         [QueueOutput(WEBHOOK_RECEIVED)]
         public string Json { get; }
+
+        public HttpResponseData Response { get; }
     }
 
     private readonly ILogger logger;
@@ -57,48 +57,26 @@ public class WebHookSink
             int.Parse(config["ServiceBus:TtlHours"]!));
     }
 
+    async Task SendAsync<T>(T data, CancellationToken cancellationToken)
+        where T : IWebHook<T>, new()
+    {
+        await serviceBus.SendAsync(data, cancellationToken);
+    }
+
     [Function("ProcessWebHook")]
     public async Task ProcessWebHookAsync(
         [QueueTrigger(WEBHOOK_RECEIVED)] string json,
         CancellationToken cancellationToken)
     {
-        //var node = JsonNode.Parse(json!);
-
-        //async Task SendAsync<T>(Func<JsonNode?, T> getWebHook)
-        //    where T : IWebHook<T>, new()
-        //{
-        //    //await serviceBus.SendAsync(getWebHook(node!), cancellationToken);
-        //}
-
-        //switch (node.GetString("status"))
-        //{
-        //    case "contract-sent-to-signer":
-        //        await SendAsync(n => n!.ParseContractSent());
-        //        break;
-        //    case "contract-signed":
-        //        await SendAsync(n => n!.ParseContractSigned());
-        //        break;
-        //    case "contract-withdrawn":
-        //        await SendAsync(n => n!.ParseContractWithdrawn());
-        //        break;
-        //    case "signer-mobile-update-request":
-        //        await SendAsync(n => n!.ParseMobileUpdate());
-        //        break;
-        //    case "signer-declined":
-        //        await SendAsync(n => n!.ParseSignerDeclined());
-        //        break;
-        //    case "signer-signed":
-        //        await SendAsync(n => n!.ParseSignerSigned());
-        //        break;
-        //    case "signer-viewed-the-contract":
-        //        await SendAsync(n => n!.ParseSignerViewed());
-        //        break;
-        //    case "error":
-        //        await SendAsync(n => n!.ParseWebHookError());
-        //        break;
-        //    default:
-        //        throw new ArgumentOutOfRangeException("status");
-        //}
+        await JsonHelper.Parse<Metadata>(json, v => default!).Match(
+            contractSent => SendAsync(contractSent, cancellationToken),
+            contractSigned => SendAsync(contractSigned, cancellationToken),
+            contractWithdrawn => SendAsync(contractWithdrawn, cancellationToken),
+            mobileUpdate => SendAsync(mobileUpdate, cancellationToken),
+            signerDeclined => SendAsync(signerDeclined, cancellationToken),
+            signerSigned => SendAsync(signerSigned, cancellationToken),
+            signerViewed => SendAsync(signerViewed, cancellationToken),
+            webHookError => SendAsync(webHookError, cancellationToken));
     }
 
     [Function("ReceiveWebHook")]
