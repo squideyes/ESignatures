@@ -3,7 +3,7 @@
 // of the MIT License (https://opensource.org/licenses/MIT)
 // ********************************************************
 
-namespace SharedModels;
+namespace SquidEyes.SharedModels;
 
 public enum Nickname
 {

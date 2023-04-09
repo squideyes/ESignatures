@@ -7,7 +7,7 @@ using Azure.Messaging.ServiceBus;
 using SquidEyes.ESignatures.WebHook;
 using AMS = Azure.Messaging.ServiceBus;
 
-namespace WebHookProcessor;
+namespace SquidEyes.WebHookProcessor;
 
 internal sealed class ServiceBusSender : IAsyncDisposable
 {

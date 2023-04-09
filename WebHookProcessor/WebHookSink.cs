@@ -7,13 +7,13 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using SharedModels;
 using SquidEyes.ESignatures.WebHook;
+using SquidEyes.SharedModels;
 using System.Net;
 using static Microsoft.Azure.Functions.Worker.AuthorizationLevel;
 using static System.Net.HttpStatusCode;
 
-namespace WebHookProcessor;
+namespace SquidEyes.WebHookProcessor;
 
 public class WebHookSink
 {

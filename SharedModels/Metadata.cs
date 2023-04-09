@@ -5,7 +5,7 @@
 
 using SquidEyes.Fundamentals;
 
-namespace SharedModels;
+namespace SquidEyes.SharedModels;
 
 public class Metadata
 {

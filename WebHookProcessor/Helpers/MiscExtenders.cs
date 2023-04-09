@@ -7,7 +7,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using System.Net;
 using System.Text;
 
-namespace WebHookProcessor;
+namespace SquidEyes.WebHookProcessor;
 
 internal static class MiscExtenders
 {

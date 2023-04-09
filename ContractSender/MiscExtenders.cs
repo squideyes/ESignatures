@@ -5,7 +5,7 @@
 
 using SquidEyes.Fundamentals;
 
-namespace ContractSenderDemo;
+namespace SquidEyes.ContractSender;
 
 public static class MiscExtenders
 {

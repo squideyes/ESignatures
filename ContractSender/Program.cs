@@ -3,12 +3,12 @@
 // of the MIT License (https://opensource.org/licenses/MIT)
 // ********************************************************
 
-using ContractSenderDemo;
-using SquidEyes.ESignatures.Client;
 using Microsoft.Extensions.Configuration;
-using SharedModels;
+using SquidEyes.ContractSender;
+using SquidEyes.ESignatures.Client;
 using SquidEyes.Fundamentals;
-using static SharedModels.Nickname;
+using SquidEyes.SharedModels;
+using static SquidEyes.SharedModels.Nickname;
 
 var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
