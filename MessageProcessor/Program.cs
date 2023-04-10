@@ -5,6 +5,7 @@
 
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 
 const string TOPIC = "esignatures";
@@ -38,7 +39,7 @@ try
     Console.WriteLine("Stopping the receiver...");
 
     await processor.StopProcessingAsync();
-    
+
     Console.WriteLine("Stopped receiving messages");
 }
 finally
@@ -55,9 +56,42 @@ async Task MessageHandler(ProcessMessageEventArgs args)
 
     var node = JsonNode.Parse(json);
 
-    // TODO: Parse and handle messages
+    var kind = node!["WebHookKind"];
+
+    if (kind!.GetValue<string>() == "ContractSigned")
+        await FetchAndOpenPdfAsync(node);
 
     await args.CompleteMessageAsync(args.Message);
+}
+
+async Task FetchAndOpenPdfAsync(JsonNode? node)
+{
+    var uri = new Uri(node!["PdfUri"]!.GetValue<string>());
+
+    var client = new HttpClient();
+
+    var fileName = Path.ChangeExtension(
+        Path.GetTempFileName(), ".pdf");
+
+    var source = await client.GetStreamAsync(uri);
+
+    using (var target = File.OpenWrite(fileName))
+        source.CopyTo(target);
+
+    try
+    {
+        var process = new Process();
+
+        process.StartInfo.FileName = fileName;
+        process.StartInfo.UseShellExecute = true;
+
+        process.Start();
+    }
+    catch (Exception error)
+    {
+        Console.WriteLine(
+            $"ERROR: {error.Message} (PDF: {fileName})");
+    }
 }
 
 Task ErrorHandler(ProcessErrorEventArgs args)
