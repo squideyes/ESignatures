@@ -1,4 +1,4 @@
-Please feel free to offer up any additions or improvements to https://esignatures.io/ that you may have; via pull-request:
+Please feel free to offer up any additions or improvements to **SquidEyes.ESignatures** that you may have; via pull-request:
 
 * Be sure to add a standard license header  (from **SquidEyes.ESignatures.sln.headertext**) to new source-code files
 * No changes to the solution-wide .editorconfig file will be accepted

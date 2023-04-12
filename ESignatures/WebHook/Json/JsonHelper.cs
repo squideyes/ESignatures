@@ -175,7 +175,7 @@ public static class JsonHelper
 
         var contract = data!["contract"]!;
 
-        var signers = new List<BasicSigner>();
+        var signers = new List<ContractSigner>();
 
         foreach (var s in contract!["signers"]!.AsArray())
         {

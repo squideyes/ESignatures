@@ -20,7 +20,7 @@ To use the demos you'll need to signup for a demo <a href="https://esignatures.i
 - **VendorEmail** Vendor's email address
 - **VendorMobile**: Vendor's mobile phone number
 - **VendorLogoUri**: URI to vendor's 128x128 pixel logo
-9. Run **ContractSender** with the following command line arguments
+9. Rebuild the solution (not compile!) and then run **ContractSender** with the following command line arguments
 - **--AuthToken=**{**Your Secret Token**, from Step #1, above}
 - **--PartnerEmail=**{Partner's  email address}
 - **--PartnerMobile=**{Partner's mobile phone number}
