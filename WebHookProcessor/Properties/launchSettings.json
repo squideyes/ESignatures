@@ -3,7 +3,9 @@
     "WebHookProcessor": {
       "commandName": "Project",
       "commandLineArgs": "--port 7159",
-      "launchBrowser": false
+      "launchBrowser": false,
+      "devTunnelEnabled": true,
+      "devTunnelAccess": "public"
     }
   }
 }

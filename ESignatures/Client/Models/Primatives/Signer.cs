@@ -35,7 +35,7 @@ public class Signer
     }
 
     public required string FullName { get; init; }
-    public required Token Nickname { get; init; }
+    public required Tag Nickname { get; init; }
     public required Email Email { get; init; }
     public required Phone Mobile { get; init; }
     public string? Company { get; init; }

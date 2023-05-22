@@ -114,7 +114,7 @@ Handling GetHandling(int ordinal)
     var signer = new Signer()
     {
         FullName = $"{nickname} Mc{nickname}",
-        Nickname = Token.From(nickname.ToString()),
+        Nickname = Tag.From(nickname.ToString()),
         Email = email,
         Mobile = mobile,
         Company = $"{nickname}, Inc.",

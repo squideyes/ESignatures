@@ -10,14 +10,14 @@ namespace SquidEyes.ContractSender;
 public static class MiscExtenders
 {
     public static Email? ToEmailOrNull(this string value) =>
-        value.Get(v => v == null ? default : Email.From(v));
+        value.Convert(v => v == null ? (Email?)null : Email.From(v));
 
     public static Uri? ToUriOrNull(this string value) =>
-        value.Get(v => v == null ? null : new Uri(v));
+        value.Convert(v => v == null ? null : new Uri(v));
 
     public static Email[]? ToEmailArrayOrNull(this string value)
     {
-        return value.Get(v => v == null ? default
+        return value.Convert(v => v == null ? default
             : v.Split(';').Select(e => Email.From(e)).ToArray());
     }
 }
